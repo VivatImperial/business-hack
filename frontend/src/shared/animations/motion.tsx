@@ -6,6 +6,9 @@ import {
     useSpring,
     useTransform,
     useInView,
+    useMotionValue,
+    useReducedMotion,
+    animate,
 } from "framer-motion";
 
 export {
@@ -16,6 +19,9 @@ export {
     useSpring,
     useTransform,
     useInView,
+    useMotionValue,
+    useReducedMotion,
+    animate,
 };
 
 /* ── Reusable variant presets ── */
@@ -99,3 +105,104 @@ export const springPop: Variants = {
         },
     },
 };
+
+export const slideInFromRight: Variants = {
+    hidden: { opacity: 0, x: 32 },
+    show: {
+        opacity: 1,
+        x: 0,
+        transition: {
+            duration: 0.7,
+            ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
+        },
+    },
+};
+
+export const slideInFromLeft: Variants = {
+    hidden: { opacity: 0, x: -32 },
+    show: {
+        opacity: 1,
+        x: 0,
+        transition: {
+            duration: 0.7,
+            ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
+        },
+    },
+};
+
+export const softFadeUp: Variants = {
+    hidden: { opacity: 0, y: 16 },
+    show: {
+        opacity: 1,
+        y: 0,
+        transition: {
+            duration: 0.6,
+            ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
+        },
+    },
+};
+
+export const drawLine: Variants = {
+    hidden: { pathLength: 0, opacity: 0 },
+    show: {
+        pathLength: 1,
+        opacity: 1,
+        transition: {
+            duration: 1.2,
+            ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
+        },
+    },
+};
+
+/**
+ * Bouncy scale + fade used for big headlines and centered titles.
+ */
+export const scaleFadeIn: Variants = {
+    hidden: { opacity: 0, scale: 0.9, y: 12 },
+    show: {
+        opacity: 1,
+        scale: 1,
+        y: 0,
+        transition: {
+            type: "spring",
+            stiffness: 200,
+            damping: 18,
+            mass: 0.9,
+        },
+    },
+};
+
+/**
+ * Strong blur-in-up with bigger translate — for hero imagery.
+ */
+export const blurFadeUpLarge: Variants = {
+    hidden: { opacity: 0, y: 32, filter: "blur(10px)", scale: 0.97 },
+    show: {
+        opacity: 1,
+        y: 0,
+        filter: "blur(0px)",
+        scale: 1,
+        transition: {
+            type: "spring",
+            stiffness: 140,
+            damping: 22,
+            mass: 0.9,
+        },
+    },
+};
+
+/**
+ * Stagger with a leading delay — let a headline land, then children flow in.
+ */
+export const staggerContainerDelayed = (
+    staggerDelay = 0.1,
+    delay = 0.15,
+): Variants => ({
+    hidden: {},
+    show: {
+        transition: {
+            staggerChildren: staggerDelay,
+            delayChildren: delay,
+        },
+    },
+});
