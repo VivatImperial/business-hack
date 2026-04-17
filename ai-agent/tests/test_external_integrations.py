@@ -57,6 +57,7 @@ class ExternalIntegrationTests(unittest.TestCase):
             api_key="test-key",
             folder_id="b1g-test-folder",
             model_name="yandexgpt/latest",
+            base_url="https://llm.api.cloud.yandex.net/foundationModels/v1",
         )
 
         self.assertEqual(
@@ -69,10 +70,21 @@ class ExternalIntegrationTests(unittest.TestCase):
             api_key="test-key",
             folder_id="your-folder-id",
             model_name="yandexgpt/latest",
+            base_url="https://llm.api.cloud.yandex.net/foundationModels/v1",
         )
 
         with self.assertRaises(RuntimeError):
             client._resolve_model_name()
+
+    def test_yandex_client_keeps_plain_model_name_for_openai_compatible_endpoint(self) -> None:
+        client = YandexGptClient(
+            api_key="test-key",
+            folder_id="your-folder-id",
+            model_name="yandexgpt/latest",
+            base_url="https://llm.api.cloud.yandex.net/v1",
+        )
+
+        self.assertEqual(client._resolve_model_name(), "yandexgpt/latest")
 
 
 if __name__ == "__main__":

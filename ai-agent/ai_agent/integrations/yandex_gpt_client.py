@@ -27,7 +27,12 @@ class YandexGptClient:
     def is_configured(self) -> bool:
         return bool(self.api_key and self.model_name)
 
+    def _is_openai_compatible_mode(self) -> bool:
+        return self.base_url.endswith("/v1") and not self.base_url.endswith("/foundationModels/v1")
+
     def _resolve_model_name(self) -> str:
+        if self._is_openai_compatible_mode():
+            return self.model_name
         if self.model_name.startswith("gpt://"):
             return self.model_name
         if not self.folder_id or self.folder_id == "your-folder-id":
@@ -42,7 +47,11 @@ class YandexGptClient:
             "Authorization": f"Api-Key {self.api_key}",
             "Content-Type": "application/json",
         }
-        if self.folder_id and self.folder_id != "your-folder-id":
+        if (
+            not self._is_openai_compatible_mode()
+            and self.folder_id
+            and self.folder_id != "your-folder-id"
+        ):
             headers["x-folder-id"] = self.folder_id
 
         payload: dict[str, Any] = {

@@ -3,7 +3,11 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Query
 
 from backend.app.db.models.entities import Ticket, User
-from backend.app.helpers.dependencies import get_current_user, get_appeals_service, get_admin_repository
+from backend.app.helpers.dependencies import (
+    get_admin_repository,
+    get_ai_agent_service,
+    get_current_user,
+)
 from backend.app.schemas.client import (
     ClientChannel,
     ClientRequestCreateRequest,
@@ -12,6 +16,7 @@ from backend.app.schemas.client import (
     ClientRequestMessageCreateRequest,
     ClientRequestsListResponse,
 )
+from backend.app.services.ai_agent_service import AiAgentService
 from backend.app.services.client_requests import ClientRequestsService
 
 router = APIRouter(tags=["Client Requests"])
@@ -19,8 +24,9 @@ router = APIRouter(tags=["Client Requests"])
 
 def get_client_requests_service(
     repository=Depends(get_admin_repository),
+    ai_agent_service: AiAgentService = Depends(get_ai_agent_service),
 ) -> ClientRequestsService:
-    return ClientRequestsService(repository)
+    return ClientRequestsService(repository, ai_agent_service=ai_agent_service)
 
 
 def serialize_request(ticket: Ticket) -> ClientRequestDetailResponse:

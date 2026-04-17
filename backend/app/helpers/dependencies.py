@@ -55,18 +55,24 @@ def get_appeals_service(
     return AppealsService(repository)
 
 
+def get_ai_agent_service(
+    settings: Settings = Depends(get_settings),
+) -> AiAgentService:
+    return AiAgentService(
+        base_url=settings.ai_agent_base_url,
+        timeout_seconds=settings.ai_agent_timeout_seconds,
+    )
+
+
 def get_dashboard_service(
     repository: AdminRepository = Depends(get_admin_repository),
     database: Database = Depends(get_database),
-    settings: Settings = Depends(get_settings),
+    ai_agent_service: AiAgentService = Depends(get_ai_agent_service),
 ) -> DashboardService:
     return DashboardService(
         repository,
         database=database,
-        ai_agent_service=AiAgentService(
-            base_url=settings.ai_agent_base_url,
-            timeout_seconds=settings.ai_agent_timeout_seconds,
-        ),
+        ai_agent_service=ai_agent_service,
     )
 
 

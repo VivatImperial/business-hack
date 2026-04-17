@@ -7,7 +7,20 @@ import unittest
 from fastapi.testclient import TestClient
 
 from backend.app import create_app
+from backend.app.helpers.dependencies import get_ai_agent_service
 from tests.backend.support import BackendDatabaseTestCase
+
+
+class FakeAiAgentService:
+    async def respond(self, payload: dict[str, object]) -> dict[str, object]:
+        return {
+            "mode": "resolve_issue",
+            "message": f"AI: {payload['user_text']}",
+            "citations": [],
+            "confidence": 0.91,
+            "should_escalate": False,
+            "ticket_draft": None,
+        }
 
 
 class ClientApiTests(BackendDatabaseTestCase):
@@ -15,10 +28,12 @@ class ClientApiTests(BackendDatabaseTestCase):
         super().setUp()
         os.environ["BACKEND_TELEGRAM_BOT_TOKEN"] = "telegram-test-token"
         self.app = create_app()
+        self.app.dependency_overrides[get_ai_agent_service] = lambda: FakeAiAgentService()
         self.client = TestClient(self.app)
 
     def tearDown(self) -> None:
         self.client.close()
+        self.app.dependency_overrides.clear()
         asyncio.run(self.app.state.database.dispose())
         super().tearDown()
 
@@ -67,7 +82,9 @@ class ClientApiTests(BackendDatabaseTestCase):
         self.assertEqual(create_response.status_code, 200, create_response.text)
         request_id = create_response.json()["id"]
         self.assertEqual(create_response.json()["channel"], "telegram")
-        self.assertEqual(len(create_response.json()["messages"]), 1)
+        self.assertEqual(len(create_response.json()["messages"]), 2)
+        self.assertEqual(create_response.json()["messages"][-1]["role"], "assistant")
+        self.assertEqual(create_response.json()["messages"][-1]["text"], "AI: Нужен доступ к VPN")
 
         list_response = self.client.get(
             "/api/v1/client/requests",
@@ -83,7 +100,12 @@ class ClientApiTests(BackendDatabaseTestCase):
             json={"text": "И еще нужен доступ к почте"},
         )
         self.assertEqual(message_response.status_code, 200, message_response.text)
-        self.assertEqual(len(message_response.json()["messages"]), 2)
+        self.assertEqual(len(message_response.json()["messages"]), 4)
+        self.assertEqual(message_response.json()["messages"][-1]["role"], "assistant")
+        self.assertEqual(
+            message_response.json()["messages"][-1]["text"],
+            "AI: И еще нужен доступ к почте",
+        )
 
     def test_login_can_link_telegram_and_telegram_auth_can_reuse_account(self) -> None:
         self._register_user(login="linked", email="linked@example.com")

@@ -33,6 +33,18 @@ def _telegram_identity(update: Update) -> tuple[str, str | None]:
     return str(user.id), user.username
 
 
+def _latest_assistant_reply(request: dict[str, object]) -> str | None:
+    messages = request.get("messages", [])
+    if not isinstance(messages, list):
+        return None
+    for message in reversed(messages):
+        if isinstance(message, dict) and message.get("role") == "assistant":
+            text = message.get("text")
+            if isinstance(text, str) and text.strip():
+                return text.strip()
+    return None
+
+
 async def _resolve_token(update: Update, backend: BackendClient) -> str | None:
     telegram_user_id, telegram_username = _telegram_identity(update)
     return await backend.telegram_login(
@@ -149,8 +161,12 @@ async def new_request_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
         title=title,
         description=description,
     )
+    assistant_reply = _latest_assistant_reply(request)
+    reply_lines = [f"Обращение создано: {request['id']} ({request['status']})."]
+    if assistant_reply:
+        reply_lines.extend(["", assistant_reply])
     await update.effective_message.reply_text(
-        f"Обращение создано: {request['id']} ({request['status']})."
+        "\n".join(reply_lines)
     )
 
 
@@ -222,8 +238,12 @@ async def reply_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         text=text,
         source_message_id=str(update.effective_message.message_id),
     )
+    assistant_reply = _latest_assistant_reply(request)
+    reply_lines = [f"Сообщение добавлено в {request['id']}. Всего сообщений: {len(request['messages'])}."]
+    if assistant_reply:
+        reply_lines.extend(["", assistant_reply])
     await update.effective_message.reply_text(
-        f"Сообщение добавлено в {request['id']}. Всего сообщений: {len(request['messages'])}."
+        "\n".join(reply_lines)
     )
 
 
