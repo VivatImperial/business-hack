@@ -57,6 +57,7 @@ services:
       BACKEND_ADMIN_EMAIL: "${BACKEND_ADMIN_EMAIL:-admin@example.com}"
       BACKEND_ADMIN_PASSWORD: "${BACKEND_ADMIN_PASSWORD:-admin12345}"
       BACKEND_AI_AGENT_BASE_URL: "http://ai-agent:8090"
+      BACKEND_TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-}"
       BACKEND_CORS_ORIGINS: "${BACKEND_CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173}"
       BACKEND_RUN_MIGRATIONS_ON_STARTUP: "false"
       BACKEND_ENABLE_DEV_SEED: "${BACKEND_ENABLE_DEV_SEED:-false}"
@@ -74,6 +75,21 @@ services:
         condition: service_started
       mssql:
         condition: service_healthy
+
+  telegram-bot:
+    build:
+      context: .
+      dockerfile: telegram-bot/Dockerfile
+    container_name: telegram-bot-baltbereg
+    restart: unless-stopped
+    environment:
+      TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:?Set TELEGRAM_BOT_TOKEN in .env}"
+      BACKEND_BASE_URL: "http://backend:8000"
+      BACKEND_TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-}"
+      TELEGRAM_BOT_TIMEOUT_SECONDS: "${TELEGRAM_BOT_TIMEOUT_SECONDS:-20}"
+    depends_on:
+      backend:
+        condition: service_started
 
   mssql:
     image: mcr.microsoft.com/mssql/server:2019-CU18-ubuntu-20.04

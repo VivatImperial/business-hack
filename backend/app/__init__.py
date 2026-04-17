@@ -13,6 +13,7 @@ from backend.app.db.migrations import apply_migrations
 from backend.app.db.repositories.admin import AdminRepository
 from backend.app.db.session import Database
 from backend.app.routers.admin import router as admin_router
+from backend.app.routers.client import router as client_router
 from backend.app.services.bootstrap import initialize_state
 
 OPENAPI_TAGS = [
@@ -31,6 +32,14 @@ OPENAPI_TAGS = [
     {
         "name": "Admin Settings",
         "description": "Assistant runtime settings managed from the admin panel.",
+    },
+    {
+        "name": "Client Auth",
+        "description": "Public authentication endpoints for customer web and Telegram flows.",
+    },
+    {
+        "name": "Client Requests",
+        "description": "Customer request lifecycle endpoints shared by web and Telegram.",
     },
 ]
 
@@ -59,9 +68,9 @@ def create_app(*, initialize_runtime: bool = True) -> FastAPI:
         title="Baltiyskiy Bereg Backend API",
         version="1.0.0",
         description=(
-            "Admin API for the Baltiyskiy Bereg service-desk assistant. "
-            "Use it for admin authentication, dashboard analytics, appeals management, "
-            "and assistant settings."
+            "Backend API for the Baltiyskiy Bereg service-desk assistant. "
+            "It exposes admin endpoints for dashboards and support operators, plus "
+            "public client endpoints shared by the web flow and Telegram bot."
         ),
         openapi_tags=OPENAPI_TAGS,
         lifespan=lifespan if initialize_runtime else None,
@@ -90,4 +99,5 @@ def create_app(*, initialize_runtime: bool = True) -> FastAPI:
         )
 
     app.include_router(admin_router, prefix=settings.api_v1_prefix)
+    app.include_router(client_router, prefix=settings.api_v1_prefix)
     return app

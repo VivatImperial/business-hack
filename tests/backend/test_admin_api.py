@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import unittest
 
@@ -13,9 +14,12 @@ from tests.backend.support import BackendDatabaseTestCase
 class AdminApiTests(BackendDatabaseTestCase):
     def setUp(self) -> None:
         super().setUp()
-        self.client = TestClient(create_app())
+        self.app = create_app()
+        self.client = TestClient(self.app)
 
     def tearDown(self) -> None:
+        self.client.close()
+        asyncio.run(self.app.state.database.dispose())
         super().tearDown()
 
     def _auth_headers(self) -> dict[str, str]:

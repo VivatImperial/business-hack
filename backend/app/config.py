@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     admin_login: str = "admin"
     admin_email: str = "admin@example.com"
     admin_password: str = "admin12345"
+    telegram_bot_token: str | None = None
 
     default_tone_of_voice: str = "helpful"
     default_confidence_threshold: float = Field(default=0.7, ge=0.0, le=1.0)

@@ -21,6 +21,8 @@ class User(Base):
     login: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(512))
+    telegram_user_id: Mapped[str | None] = mapped_column(String(64), unique=True, index=True)
+    telegram_username: Mapped[str | None] = mapped_column(String(255))
     is_admin: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
@@ -46,6 +48,8 @@ class Ticket(Base):
     source_system: Mapped[str] = mapped_column(String(32), default="backend", nullable=False)
     source_ticket_id: Mapped[str | None] = mapped_column(String(128), index=True)
     employee_login: Mapped[str] = mapped_column(String(128), index=True)
+    requester_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), index=True)
+    channel: Mapped[str] = mapped_column(String(32), default="web", nullable=False, index=True)
     scope: Mapped[str] = mapped_column(String(32), nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     priority: Mapped[str] = mapped_column(String(8), nullable=False)

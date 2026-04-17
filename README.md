@@ -130,6 +130,7 @@ Production backend использует `Postgres` как operational storage, �
 
 - `postgres` — основное хранилище backend
 - `backend` — FastAPI admin API на `http://localhost:8000`
+- `telegram-bot` — Telegram polling worker для клиентских обращений
 - `ai-agent` — internal inference/RAG сервис на `http://localhost:8090`
 - `mssql` — upstream service desk source
 - `qdrant` — vector storage для `ai-agent`
@@ -137,7 +138,7 @@ Production backend использует `Postgres` как operational storage, �
 Запуск:
 
 ```bash
-docker compose up -d postgres mssql qdrant ai-agent backend
+docker compose up -d postgres mssql qdrant ai-agent backend telegram-bot
 ```
 
 Swagger UI backend доступен по адресу:
@@ -149,7 +150,7 @@ http://localhost:8000/docs
 Актуальную OpenAPI-схему для фронтенда можно выгрузить командой:
 
 ```bash
-python -m backend.export_openapi
+uv run python -m backend.export_openapi
 ```
 
 Проверка, что сервис поднялся:
@@ -173,6 +174,7 @@ Backend при запуске применяет Alembic migrations и зате�
 - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
 - `BACKEND_JWT_SECRET`, `BACKEND_ADMIN_LOGIN`, `BACKEND_ADMIN_EMAIL`, `BACKEND_ADMIN_PASSWORD`
 - `BACKEND_AI_AGENT_BASE_URL`
+- `TELEGRAM_BOT_TOKEN`
 - `BACKEND_ENABLE_DEV_SEED`
 
 Синхронизация проекций из MSSQL в Postgres:
@@ -182,6 +184,41 @@ uv run python -m backend.sync_service_desk
 ```
 
 `backend` остаётся единственным владельцем `/api/v1/admin/*`, а `ai-agent` используется как internal inference endpoint для health/respond contract.
+
+### Public client API
+
+Для web-клиента и Telegram-бота backend теперь отдает единый публичный контур:
+
+- `POST /api/v1/client/auth/register`
+- `POST /api/v1/client/auth/login`
+- `POST /api/v1/client/auth/telegram/login`
+- `GET /api/v1/client/me`
+- `POST /api/v1/client/requests`
+- `GET /api/v1/client/requests`
+- `GET /api/v1/client/requests/{id}`
+- `POST /api/v1/client/requests/{id}/messages`
+
+Для клиентских обращений используется поле `channel` со значениями `web` и `telegram`. Это позволяет web-интерфейсу не показывать Telegram-обращения, а боту работать только со своими тикетами через тот же backend-контракт.
+
+### Telegram bot
+
+`telegram-bot` не дублирует admin-логику и работает только через public backend API. Для запуска нужно заполнить в `.env`:
+
+```bash
+TELEGRAM_BOT_TOKEN=your-telegram-bot-token
+```
+
+После запуска доступны команды:
+
+```text
+/register <email> <login> <password>
+/login <email> <password>
+/me
+/newrequest <title> | <description>
+/myrequests
+/request <request_id>
+/reply <request_id> <text>
+```
 
 ### Ключевые таблицы
 

@@ -80,3 +80,15 @@ async def get_current_admin(
             detail="Not authenticated.",
         )
     return await auth_service.get_current_admin(credentials.credentials)
+
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> User:
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated.",
+        )
+    return await auth_service.get_current_user(credentials.credentials)

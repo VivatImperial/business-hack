@@ -1,0 +1,13 @@
+[project]
+name = "baltiyskiy-bereg-telegram-bot"
+version = "0.1.0"
+description = "Telegram bot for Baltiyskiy Bereg public request flow"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "httpx",
+    "pydantic-settings",
+    "python-telegram-bot",
+]
+
+[tool.uv]
+package = false

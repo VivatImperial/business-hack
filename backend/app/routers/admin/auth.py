@@ -19,7 +19,7 @@ async def login(
     payload: LoginRequest,
     auth_service: AuthService = Depends(get_auth_service),
 ) -> TokenResponse:
-    token = await auth_service.login(payload.email, payload.password)
+    token = await auth_service.login_admin(payload.email, payload.password)
     return TokenResponse(access_token=token)
 
 

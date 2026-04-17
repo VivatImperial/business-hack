@@ -23,8 +23,18 @@ class AdminRepository:
         result = await self.session.execute(select(User).where(User.email == email))
         return result.scalar_one_or_none()
 
+    async def get_user_by_login(self, login: str) -> User | None:
+        result = await self.session.execute(select(User).where(User.login == login))
+        return result.scalar_one_or_none()
+
     async def get_user_by_id(self, user_id: str) -> User | None:
         result = await self.session.execute(select(User).where(User.id == user_id))
+        return result.scalar_one_or_none()
+
+    async def get_user_by_telegram_user_id(self, telegram_user_id: str) -> User | None:
+        result = await self.session.execute(
+            select(User).where(User.telegram_user_id == telegram_user_id)
+        )
         return result.scalar_one_or_none()
 
     async def has_users(self) -> bool:
@@ -162,6 +172,37 @@ class AdminRepository:
 
     async def get_ticket(self, ticket_id: str) -> Ticket | None:
         result = await self.session.execute(select(Ticket).where(Ticket.id == ticket_id))
+        return result.scalar_one_or_none()
+
+    async def list_user_tickets(
+        self,
+        *,
+        requester_user_id: str,
+        channel: str | None = None,
+    ) -> list[Ticket]:
+        query: Select[tuple[Ticket]] = (
+            select(Ticket)
+            .where(Ticket.requester_user_id == requester_user_id)
+            .order_by(Ticket.created_at.desc())
+        )
+        if channel:
+            query = query.where(Ticket.channel == channel)
+
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
+    async def get_user_ticket(
+        self,
+        *,
+        requester_user_id: str,
+        ticket_id: str,
+    ) -> Ticket | None:
+        result = await self.session.execute(
+            select(Ticket).where(
+                Ticket.id == ticket_id,
+                Ticket.requester_user_id == requester_user_id,
+            )
+        )
         return result.scalar_one_or_none()
 
     async def list_tickets_created_since(self, since: datetime) -> list[Ticket]:

@@ -21,6 +21,9 @@ class OpenApiTests(unittest.TestCase):
         self.assertIn("/api/v1/admin/dashboard/summary", schema["paths"])
         self.assertIn("/api/v1/admin/appeals", schema["paths"])
         self.assertIn("/api/v1/admin/settings", schema["paths"])
+        self.assertIn("/api/v1/client/auth/register", schema["paths"])
+        self.assertIn("/api/v1/client/auth/telegram/login", schema["paths"])
+        self.assertIn("/api/v1/client/requests", schema["paths"])
 
     def test_export_openapi_writes_backend_schema(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -32,6 +35,7 @@ class OpenApiTests(unittest.TestCase):
         self.assertEqual(written_path, output_path)
         self.assertEqual(schema["info"]["title"], "Baltiyskiy Bereg Backend API")
         self.assertIn("/api/v1/admin/auth/login", schema["paths"])
+        self.assertIn("/api/v1/client/requests", schema["paths"])
 
 
 if __name__ == "__main__":

@@ -58,6 +58,7 @@ class ServiceDeskSyncService:
                 source_system="mssql",
                 source_ticket_id=projection.source_ticket_id,
                 employee_login=projection.employee_login,
+                channel="web",
                 scope=projection.scope,
                 status=projection.status,
                 priority=projection.priority,
@@ -74,6 +75,7 @@ class ServiceDeskSyncService:
             await self.repository.add_ticket(ticket)
         else:
             ticket.employee_login = projection.employee_login
+            ticket.channel = "web"
             ticket.scope = projection.scope
             ticket.status = projection.status
             ticket.priority = projection.priority
