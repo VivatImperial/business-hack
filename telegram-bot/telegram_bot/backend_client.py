@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import httpx
 
@@ -14,6 +14,7 @@ class BackendClient:
     base_url: str
     bot_token: str
     timeout_seconds: float
+    _client: httpx.AsyncClient = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         self._client = httpx.AsyncClient(
