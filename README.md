@@ -108,19 +108,68 @@ with open("data/cleaned.bak", "wb") as f:
 
 1. Положите скачанный `cleaned.bak` в `data/`.
 
-2. Запустите MSSQL:
+2. Запустите инфраструктуру:
 
 ```bash
 docker compose up -d
 ```
 
-3. Дождитесь восстановления базы (~1-2 минуты). Проверьте подключение:
+3. Дождитесь восстановления MSSQL (~1-2 минуты), запуска `postgres`, `qdrant`, `ai-agent` и `backend`. Проверьте подключение к MSSQL:
 
 ```bash
 docker exec -it mssql-baltbereg /opt/mssql-tools/bin/sqlcmd \
     -S localhost -U SA -P "$MSSQL_SA_PASSWORD" \
     -Q "SELECT TOP 1 Name FROM service_desk_tdbb.dbo.Task"
 ```
+
+### Backend admin API
+
+Production backend использует `Postgres` как operational storage, читает upstream данные из MSSQL и работает рядом с internal `ai-agent` сервисом.
+
+Сервисы в `docker compose`:
+
+- `postgres` — основное хранилище backend
+- `backend` — FastAPI admin API на `http://localhost:8000`
+- `ai-agent` — internal inference/RAG сервис на `http://localhost:8090`
+- `mssql` — upstream service desk source
+- `qdrant` — vector storage для `ai-agent`
+
+Запуск:
+
+```bash
+docker compose up -d postgres mssql qdrant ai-agent backend
+```
+
+Проверка, что сервис поднялся:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/admin/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"admin12345"}'
+```
+
+Для локального запуска без Docker:
+
+```bash
+uv run python -m backend.serve
+```
+
+Backend при запуске применяет Alembic migrations и затем поднимает API.
+
+Основные переменные backend лежат в `.env.example`:
+
+- `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
+- `BACKEND_JWT_SECRET`, `BACKEND_ADMIN_LOGIN`, `BACKEND_ADMIN_EMAIL`, `BACKEND_ADMIN_PASSWORD`
+- `BACKEND_AI_AGENT_BASE_URL`
+- `BACKEND_ENABLE_DEV_SEED`
+
+Синхронизация проекций из MSSQL в Postgres:
+
+```bash
+uv run python -m backend.sync_service_desk
+```
+
+`backend` остаётся единственным владельцем `/api/v1/admin/*`, а `ai-agent` используется как internal inference endpoint для health/respond contract.
 
 ### Ключевые таблицы
 
@@ -159,6 +208,30 @@ YANDEX_GPT_BASE_URL=https://llm.api.cloud.yandex.net/foundationModels/v1
 2. Создайте сервисный аккаунт с ролью `ai.languageModels.user`
 3. Создайте API-ключ для этого аккаунта
 4. Скопируйте `folder_id` каталога и API-ключ в `.env`
+
+## OCR для KB-статей
+
+Для image-heavy KB-статей можно включить OCR inline-скриншотов через Yandex Vision OCR:
+
+```bash
+./.venv/bin/python research/extract_datasets.py --ocr-articles
+```
+
+Опциональные переменные:
+
+```bash
+YANDEX_OCR_API_KEY=your-api-key
+YANDEX_OCR_FOLDER_ID=your-folder-id
+```
+
+Если они не заданы, `extract_datasets.py --ocr-articles` попробует использовать `YANDEX_GPT_API_KEY` и `YANDEX_GPT_FOLDER_ID`.
+
+Что делает OCR-режим:
+
+- обрабатывает только inline/base64 изображения из `KBDocument.Description`;
+- распознает текст на изображении;
+- вставляет OCR-результат как markdown в место исходной картинки;
+- сохраняет одновременно `markdown` (чистый текст без картинок) и `markdown_with_ocr` (enriched-версия для chunking).
 
 ## Формат сдачи
 

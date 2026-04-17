@@ -1,0 +1,557 @@
+{
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/auth/login",
+      "_comment": "Логин по почте и паролю. Возвращает токен",
+      "query": {},
+      "body": {
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "password": {
+          "type": "string"
+        }
+      },
+      "response": {
+        "access_token": {
+          "type": "string"
+        }
+      },
+      "errors": [
+        {
+          "code": 400,
+          "description": "Некорректное тело запроса"
+        },
+        {
+          "code": 401,
+          "description": "Неверная почта или пароль"
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/me",
+      "_comment": "Вернуть текущего авторизованного админа для отображения в интерфейсе",
+      "query": {},
+      "body": null,
+      "response": {
+        "id": {
+          "type": "string"
+        },
+        "login": {
+          "type": "string"
+        }
+      },
+      "errors": [
+        {
+          "code": 401,
+          "description": "Не авторизован"
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/dashboard/summary",
+      "_comment": "Вернуть карточки дашборда",
+      "query": {
+        "period": {
+          "type": "string",
+          "allowed_values": ["1h", "6h", "24h", "7d", "30d", "90d"],
+          "default": "24h"
+        }
+      },
+      "body": null,
+      "response": {
+        "health": {
+          "type": "string",
+          "allowed_values": {
+            "healthy": "Все внутренние проверки платформы успешны",
+            "degraded": "Часть внутренних проверок платформы успешна, часть нет",
+            "down": "Ни одна внутренняя проверка платформы неуспешна"
+          },
+          "formula": "health = 'healthy', если healthy_checks_count == total_checks_count; health = 'degraded', если 0 < healthy_checks_count < total_checks_count; health = 'down', если healthy_checks_count == 0",
+          "variables": {
+            "healthy_checks_count": "Количество успешных внутренних проверок платформы",
+            "total_checks_count": "Общее количество внутренних проверок платформы"
+          }
+        },
+        "open_appeals_count": {
+          "type": "integer",
+          "formula": "COUNT(appeal_id WHERE status = 'open' AND created_at попадает в period)",
+          "variables": {
+            "appeal_id": "Идентификатор обращения",
+            "status": "Статус обращения",
+            "created_at": "Дата и время создания обращения",
+            "period": "Выбранный период"
+          }
+        },
+        "in_progress_appeals_count": {
+          "type": "integer",
+          "formula": "COUNT(appeal_id WHERE status = 'in_progress' AND created_at попадает в period)",
+          "variables": {
+            "appeal_id": "Идентификатор обращения",
+            "status": "Статус обращения",
+            "created_at": "Дата и время создания обращения",
+            "period": "Выбранный период"
+          }
+        },
+        "assistant_resolution_rate": {
+          "type": "number",
+          "format": "0..1",
+          "formula": "assistant_closed_count / closed_appeals_count",
+          "variables": {
+            "assistant_closed_count": "Количество обращений, закрытых ассистентом за period",
+            "closed_appeals_count": "Общее количество закрытых обращений за period"
+          }
+        },
+        "avg_resolution_minutes": {
+          "type": "number",
+          "formula": "SUM(resolution_minutes_i) / closed_appeals_count",
+          "variables": {
+            "resolution_minutes_i": "Для каждого закрытого обращения: разница между closed_at и created_at в минутах",
+            "closed_appeals_count": "Общее количество закрытых обращений за period",
+            "closed_at": "Дата и время закрытия обращения",
+            "created_at": "Дата и время создания обращения"
+          }
+        },
+        "csat_avg": {
+          "type": "number|null",
+          "format": "1..5",
+          "formula": "SUM(csat_score_i) / rated_closed_appeals_count",
+          "variables": {
+            "csat_score_i": "Оценка удовлетворенности по каждому закрытому обращению, где рейтинг был получен",
+            "rated_closed_appeals_count": "Количество закрытых обращений с непустым рейтингом за period"
+          }
+        }
+      },
+      "errors": [
+        {
+          "code": 400,
+          "description": "Некорректный period"
+        },
+        {
+          "code": 401,
+          "description": "Не авторизован"
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/dashboard/messages-timeseries",
+      "_comment": "Вернуть данные для графика обработки сообщений",
+      "query": {
+        "period": {
+          "type": "string",
+          "allowed_values": ["1h", "6h", "24h", "7d", "30d", "90d"],
+          "default": "24h"
+        }
+      },
+      "body": null,
+      "response": {
+        "period": {
+          "type": "string",
+          "allowed_values": ["1h", "6h", "24h", "7d", "30d", "90d"]
+        },
+        "total_messages": {
+          "type": "integer",
+          "formula": "SUM(messages_count_i)",
+          "variables": {
+            "messages_count_i": "Количество обработанных сообщений в каждом временном интервале выбранного периода"
+          }
+        },
+        "points": {
+          "type": "array",
+          "item": {
+            "ts": {
+              "type": "string",
+              "format": "datetime"
+            },
+            "messages_count": {
+              "type": "integer",
+              "formula": "COUNT(message_id WHERE processed_at попадает в интервал точки графика)",
+              "variables": {
+                "message_id": "Идентификатор сообщения",
+                "processed_at": "Дата и время обработки сообщения"
+              }
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "code": 400,
+          "description": "Некорректный period"
+        },
+        {
+          "code": 401,
+          "description": "Не авторизован"
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/appeals",
+      "_comment": "Вернуть список обращений для страницы Обращения",
+      "query": {
+        "date_from": {
+          "type": "string|null",
+          "format": "date"
+        },
+        "date_to": {
+          "type": "string|null",
+          "format": "date"
+        },
+        "scope": {
+          "type": "string",
+          "allowed_values": {
+            "ticket": "Показывать только заявки",
+            "assistant": "Показывать только обращения ассистента",
+            "all": "Показывать все обращения"
+          },
+          "default": "all"
+        },
+        "status": {
+          "type": "string|null",
+          "allowed_values": {
+            "in_progress": "В работе",
+            "closed": "Закрыто"
+          }
+        }
+      },
+      "body": null,
+      "response": {
+        "items": {
+          "type": "array",
+          "item": {
+            "id": {
+              "type": "string"
+            },
+            "employee_login": {
+              "type": "string"
+            },
+            "scope": {
+              "type": "string",
+              "allowed_values": {
+                "ticket": "Обращение уже заведено как заявка",
+                "assistant": "Обращение существует только внутри ассистента"
+              }
+            },
+            "status": {
+              "type": "string",
+              "allowed_values": {
+                "open": "Открыто",
+                "in_progress": "В работе",
+                "closed": "Закрыто"
+              }
+            },
+            "priority": {
+              "type": "string",
+              "allowed_values": {
+                "p1": "Самый высокий приоритет",
+                "p2": "Высокий приоритет",
+                "p3": "Средний приоритет",
+                "p4": "Низкий приоритет"
+              }
+            },
+            "category": {
+              "type": "string"
+            },
+            "processing_duration_minutes": {
+              "type": "integer",
+              "formula": "Если status = 'closed', то DIFF_MINUTES(closed_at, created_at). Если status = 'open' или 'in_progress', то DIFF_MINUTES(now, created_at)",
+              "variables": {
+                "closed_at": "Дата и время закрытия обращения",
+                "created_at": "Дата и время создания обращения",
+                "now": "Текущие дата и время на сервере"
+              }
+            },
+            "closed_at": {
+              "type": "string|null",
+              "format": "datetime"
+            },
+            "csat": {
+              "type": "number|null",
+              "format": "1..5"
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "code": 400,
+          "description": "Некорректные фильтры"
+        },
+        {
+          "code": 401,
+          "description": "Не авторизован"
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/appeals/{appeal_id}",
+      "_comment": "Вернуть одно обращение для открытия карточки",
+      "path_params": {
+        "appeal_id": {
+          "type": "string"
+        }
+      },
+      "query": {},
+      "body": null,
+      "response": {
+        "id": {
+          "type": "string"
+        },
+        "employee_login": {
+          "type": "string"
+        },
+        "scope": {
+          "type": "string",
+          "allowed_values": {
+            "ticket": "Обращение уже заведено как заявка",
+            "assistant": "Обращение существует только внутри ассистента"
+          }
+        },
+        "status": {
+          "type": "string",
+          "allowed_values": {
+            "open": "Открыто",
+            "in_progress": "В работе",
+            "closed": "Закрыто"
+          }
+        },
+        "priority": {
+          "type": "string",
+          "allowed_values": {
+            "p1": "Самый высокий приоритет",
+            "p2": "Высокий приоритет",
+            "p3": "Средний приоритет",
+            "p4": "Низкий приоритет"
+          }
+        },
+        "category": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "datetime"
+        },
+        "closed_at": {
+          "type": "string|null",
+          "format": "datetime"
+        },
+        "processing_duration_minutes": {
+          "type": "integer",
+          "formula": "Если status = 'closed', то DIFF_MINUTES(closed_at, created_at). Если status = 'open' или 'in_progress', то DIFF_MINUTES(now, created_at)",
+          "variables": {
+            "closed_at": "Дата и время закрытия обращения",
+            "created_at": "Дата и время создания обращения",
+            "now": "Текущие дата и время на сервере"
+          }
+        },
+        "csat": {
+          "type": "number|null",
+          "format": "1..5"
+        }
+      },
+      "errors": [
+        {
+          "code": 401,
+          "description": "Не авторизован"
+        },
+        {
+          "code": 404,
+          "description": "Обращение не найдено"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/appeals/{appeal_id}/take",
+      "_comment": "Взять обращение в работу",
+      "path_params": {
+        "appeal_id": {
+          "type": "string"
+        }
+      },
+      "query": {},
+      "body": null,
+      "response": {
+        "id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "fixed_value": "in_progress"
+        }
+      },
+      "errors": [
+        {
+          "code": 401,
+          "description": "Не авторизован"
+        },
+        {
+          "code": 404,
+          "description": "Обращение не найдено"
+        },
+        {
+          "code": 409,
+          "description": "Обращение уже закрыто"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/appeals/{appeal_id}/close",
+      "_comment": "Закрыть обращение",
+      "path_params": {
+        "appeal_id": {
+          "type": "string"
+        }
+      },
+      "query": {},
+      "body": null,
+      "response": {
+        "id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "fixed_value": "closed"
+        },
+        "closed_at": {
+          "type": "string",
+          "format": "datetime"
+        }
+      },
+      "errors": [
+        {
+          "code": 401,
+          "description": "Не авторизован"
+        },
+        {
+          "code": 404,
+          "description": "Обращение не найдено"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/appeals/{appeal_id}/rating-request",
+      "_comment": "Отправить запрос рейтинга после закрытия обращения",
+      "path_params": {
+        "appeal_id": {
+          "type": "string"
+        }
+      },
+      "query": {},
+      "body": null,
+      "response": {
+        "id": {
+          "type": "string"
+        },
+        "rating_request_sent": {
+          "type": "boolean"
+        }
+      },
+      "errors": [
+        {
+          "code": 400,
+          "description": "Запрос рейтинга можно отправить только после закрытия обращения"
+        },
+        {
+          "code": 401,
+          "description": "Не авторизован"
+        },
+        {
+          "code": 404,
+          "description": "Обращение не найдено"
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/settings",
+      "_comment": "Вернуть текущие настройки",
+      "query": {},
+      "body": null,
+      "response": {
+        "tone_of_voice": {
+          "type": "string"
+        },
+        "confidence_threshold": {
+          "type": "number",
+          "format": "0..1"
+        },
+        "top_k": {
+          "type": "integer"
+        },
+        "use_articles": {
+          "type": "boolean",
+          "allowed_values": {
+            "true": "Использовать статьи при поиске ответа",
+            "false": "Не использовать статьи при поиске ответа"
+          }
+        }
+      },
+      "errors": [
+        {
+          "code": 401,
+          "description": "Не авторизован"
+        }
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/settings",
+      "_comment": "Сохранить настройки",
+      "query": {},
+      "body": {
+        "tone_of_voice": {
+          "type": "string"
+        },
+        "confidence_threshold": {
+          "type": "number",
+          "format": "0..1"
+        },
+        "top_k": {
+          "type": "integer"
+        },
+        "use_articles": {
+          "type": "boolean",
+          "allowed_values": {
+            "true": "Использовать статьи при поиске ответа",
+            "false": "Не использовать статьи при поиске ответа"
+          }
+        }
+      },
+      "response": {
+        "tone_of_voice": {
+          "type": "string"
+        },
+        "confidence_threshold": {
+          "type": "number",
+          "format": "0..1"
+        },
+        "top_k": {
+          "type": "integer"
+        },
+        "use_articles": {
+          "type": "boolean"
+        }
+      },
+      "errors": [
+        {
+          "code": 400,
+          "description": "Некорректные значения настроек"
+        },
+        {
+          "code": 401,
+          "description": "Не авторизован"
+        }
+      ]
+    }
+  ]
+}
