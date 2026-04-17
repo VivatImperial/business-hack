@@ -17,7 +17,7 @@ from backend.app.schemas.admin import (
 )
 from backend.app.services.appeals import AppealsService
 
-router = APIRouter(prefix="/appeals")
+router = APIRouter(prefix="/appeals", tags=["Admin Appeals"])
 
 
 def _serialize_appeal(
@@ -37,7 +37,12 @@ def _serialize_appeal(
     )
 
 
-@router.get("", response_model=AppealsListResponse)
+@router.get(
+    "",
+    response_model=AppealsListResponse,
+    summary="List appeals",
+    description="Return appeals filtered by date range, scope, and status for the admin queue.",
+)
 async def list_appeals(
     _: Annotated[object, Depends(get_current_admin)],
     date_from: date | None = Query(default=None),
@@ -51,7 +56,12 @@ async def list_appeals(
     return AppealsListResponse(items=[_serialize_appeal(appeals_service, ticket) for ticket in tickets])
 
 
-@router.get("/{appeal_id}", response_model=AppealDetailResponse)
+@router.get(
+    "/{appeal_id}",
+    response_model=AppealDetailResponse,
+    summary="Get appeal details",
+    description="Return a single appeal with its current status and timestamps.",
+)
 async def get_appeal(
     appeal_id: str,
     _: Annotated[object, Depends(get_current_admin)],
@@ -62,7 +72,12 @@ async def get_appeal(
     return AppealDetailResponse(**base.model_dump(), created_at=ticket.created_at)
 
 
-@router.post("/{appeal_id}/take", response_model=AppealStatusResponse)
+@router.post(
+    "/{appeal_id}/take",
+    response_model=AppealStatusResponse,
+    summary="Take appeal into work",
+    description="Assign the appeal to the current admin and move it into in-progress state.",
+)
 async def take_appeal(
     appeal_id: str,
     current_admin=Depends(get_current_admin),
@@ -72,7 +87,12 @@ async def take_appeal(
     return AppealStatusResponse(id=ticket.id, status="in_progress")
 
 
-@router.post("/{appeal_id}/close", response_model=AppealCloseResponse)
+@router.post(
+    "/{appeal_id}/close",
+    response_model=AppealCloseResponse,
+    summary="Close appeal",
+    description="Mark the appeal as closed and return its closure timestamp.",
+)
 async def close_appeal(
     appeal_id: str,
     _: Annotated[object, Depends(get_current_admin)],
@@ -82,7 +102,12 @@ async def close_appeal(
     return AppealCloseResponse(id=ticket.id, status="closed", closed_at=ticket.closed_at)
 
 
-@router.post("/{appeal_id}/rating-request", response_model=AppealRatingResponse)
+@router.post(
+    "/{appeal_id}/rating-request",
+    response_model=AppealRatingResponse,
+    summary="Send rating request",
+    description="Mark that the appeal customer satisfaction request has been sent.",
+)
 async def send_rating_request(
     appeal_id: str,
     _: Annotated[object, Depends(get_current_admin)],

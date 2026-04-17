@@ -140,6 +140,18 @@ Production backend использует `Postgres` как operational storage, �
 docker compose up -d postgres mssql qdrant ai-agent backend
 ```
 
+Swagger UI backend доступен по адресу:
+
+```bash
+http://localhost:8000/docs
+```
+
+Актуальную OpenAPI-схему для фронтенда можно выгрузить командой:
+
+```bash
+python -m backend.export_openapi
+```
+
 Проверка, что сервис поднялся:
 
 ```bash

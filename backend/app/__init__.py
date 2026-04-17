@@ -14,6 +14,25 @@ from backend.app.db.session import Database
 from backend.app.routers.admin import router as admin_router
 from backend.app.services.bootstrap import initialize_state
 
+OPENAPI_TAGS = [
+    {
+        "name": "Admin Auth",
+        "description": "Authentication endpoints for the admin panel.",
+    },
+    {
+        "name": "Admin Dashboard",
+        "description": "Dashboard metrics and charts for the admin panel.",
+    },
+    {
+        "name": "Admin Appeals",
+        "description": "Appeal queue management endpoints for support operators.",
+    },
+    {
+        "name": "Admin Settings",
+        "description": "Assistant runtime settings managed from the admin panel.",
+    },
+]
+
 
 async def _initialize_database(database: Database, settings: Settings) -> None:
     if settings.run_migrations_on_startup:
@@ -24,24 +43,36 @@ async def _initialize_database(database: Database, settings: Settings) -> None:
         await initialize_state(repository, settings)
 
 
-def create_app() -> FastAPI:
+def create_app(*, initialize_runtime: bool = True) -> FastAPI:
     settings = Settings()
     database = Database(settings.database_url)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        await _initialize_database(database, settings)
+        if initialize_runtime:
+            await _initialize_database(database, settings)
         yield
         await database.dispose()
 
-    app = FastAPI(title=settings.app_name, lifespan=lifespan)
+    app = FastAPI(
+        title="Baltiyskiy Bereg Backend API",
+        version="1.0.0",
+        description=(
+            "Admin API for the Baltiyskiy Bereg service-desk assistant. "
+            "Use it for admin authentication, dashboard analytics, appeals management, "
+            "and assistant settings."
+        ),
+        openapi_tags=OPENAPI_TAGS,
+        lifespan=lifespan if initialize_runtime else None,
+    )
     app.state.settings = settings
     app.state.database = database
 
-    try:
-        asyncio.get_running_loop()
-    except RuntimeError:
-        asyncio.run(_initialize_database(database, settings))
+    if initialize_runtime:
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            asyncio.run(_initialize_database(database, settings))
 
     @app.exception_handler(RequestValidationError)
     async def handle_validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
