@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "@fontsource/onest/400.css";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
 @import "@fontsource/onest/500.css";
 @import "@fontsource/onest/600.css";
 @import "@fontsource/onest/700.css";
@@ -14,8 +17,14 @@
     font-display: swap;
 }
 
+/* =========================================================================
+   Baltiyskiy Bereg — design tokens
+   - Primary: deep navy blue (sidebar background + CTA)
+   - Canvas: very light grey (app background)
+   - Card: pure white with subtle shadow
+   ========================================================================= */
+
 @theme inline {
-    /* ── Semantic tokens (shadcn) ── */
     --color-background: var(--background);
     --color-foreground: var(--foreground);
     --color-primary: var(--primary);
@@ -45,205 +54,127 @@
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
 
-    /* ── Blue — Telegram-tuned ── */
-    --color-blue-50: #f0f9ff;
-    --color-blue-100: #e0f2fe;
-    --color-blue-200: #bae6fd;
-    --color-blue-300: #7dd3fc;
-    --color-blue-400: #38bdf8;
-    --color-blue-500: #2aabee;
-    --color-blue-600: #0284c7;
-    --color-blue-700: #0369a1;
-    --color-blue-800: #075985;
-    --color-blue-900: #0c4a6e;
-    --color-blue-950: #082f49;
+    /* Navy palette (brand) */
+    --color-navy-50: #f2f5fb;
+    --color-navy-100: #e3e9f3;
+    --color-navy-200: #c4cfe4;
+    --color-navy-300: #95a7c8;
+    --color-navy-400: #6781ad;
+    --color-navy-500: #3c5a8c;
+    --color-navy-600: #2a4472;
+    --color-navy-700: #1f345a;
+    --color-navy-800: #17294a;
+    --color-navy-900: #152b52;
+    --color-navy-950: #0b1834;
 
-    /* ── Slate — cool-tinted neutrals ── */
-    --color-slate-50: oklch(0.98 0.006 250);
-    --color-slate-100: oklch(0.96 0.008 250);
-    --color-slate-200: oklch(0.92 0.01 250);
-    --color-slate-300: oklch(0.87 0.012 250);
-    --color-slate-400: oklch(0.7 0.016 250);
-    --color-slate-500: oklch(0.55 0.018 250);
-    --color-slate-600: oklch(0.45 0.018 250);
-    --color-slate-700: oklch(0.37 0.016 250);
-    --color-slate-800: oklch(0.28 0.014 250);
-    --color-slate-900: oklch(0.2 0.014 250);
-    --color-slate-950: oklch(0.14 0.012 250);
+    /* Neutral slate/gray */
+    --color-slate-50: #f8f9fb;
+    --color-slate-100: #f1f3f6;
+    --color-slate-200: #e3e7ed;
+    --color-slate-300: #cbd1db;
+    --color-slate-400: #9aa3b3;
+    --color-slate-500: #6b7584;
+    --color-slate-600: #515969;
+    --color-slate-700: #3d4452;
+    --color-slate-800: #272c38;
+    --color-slate-900: #171b24;
 
-    /* ── Gray — same cool shift ── */
-    --color-gray-50: oklch(0.985 0.004 250);
-    --color-gray-100: oklch(0.965 0.006 250);
-    --color-gray-200: oklch(0.925 0.008 250);
-    --color-gray-300: oklch(0.875 0.01 250);
-    --color-gray-400: oklch(0.71 0.014 250);
-    --color-gray-500: oklch(0.56 0.016 250);
-    --color-gray-600: oklch(0.46 0.016 250);
-    --color-gray-700: oklch(0.38 0.014 250);
-    --color-gray-800: oklch(0.29 0.012 250);
-    --color-gray-900: oklch(0.21 0.012 250);
-    --color-gray-950: oklch(0.145 0.01 250);
+    /* Status */
+    --color-success: #10b981;
+    --color-success-soft: #d1fae5;
+    --color-warning: #f59e0b;
+    --color-warning-soft: #fef3c7;
+    --color-danger: #ef4444;
+    --color-danger-soft: #fee2e2;
 
-    /* ── Zinc — cool dark tones ── */
-    --color-zinc-50: oklch(0.985 0.004 260);
-    --color-zinc-100: oklch(0.965 0.006 260);
-    --color-zinc-200: oklch(0.92 0.006 260);
-    --color-zinc-300: oklch(0.87 0.008 260);
-    --color-zinc-400: oklch(0.7 0.012 260);
-    --color-zinc-500: oklch(0.56 0.014 260);
-    --color-zinc-600: oklch(0.46 0.014 260);
-    --color-zinc-700: oklch(0.38 0.012 260);
-    --color-zinc-800: oklch(0.29 0.01 260);
-    --color-zinc-900: oklch(0.21 0.01 260);
-    --color-zinc-950: oklch(0.145 0.008 260);
+    /* Shadows - removed per request, using borders instead */
+    --shadow-card: none;
+    --shadow-pop: none;
 
-    /* ── Emerald — slightly cooler green ── */
-    --color-emerald-50: oklch(0.97 0.018 165);
-    --color-emerald-100: oklch(0.93 0.04 165);
-    --color-emerald-200: oklch(0.87 0.072 165);
-    --color-emerald-500: oklch(0.6 0.145 165);
-    --color-emerald-600: oklch(0.53 0.135 165);
-    --color-emerald-700: oklch(0.46 0.12 165);
+    /* Radius - reduced per request */
+    --radius-sm: 0.25rem;
+    --radius-md: 0.375rem;
+    --radius-lg: 0.5rem;
+    --radius-xl: 0.75rem;
+    --radius-2xl: 1rem;
 
-    /* ── Red ── */
-    --color-red-50: oklch(0.97 0.016 15);
-    --color-red-100: oklch(0.94 0.035 15);
-    --color-red-400: oklch(0.65 0.19 18);
-    --color-red-500: oklch(0.58 0.21 18);
-    --color-red-600: oklch(0.52 0.2 18);
-
-    /* ── Amber ── */
-    --color-amber-50: oklch(0.97 0.02 85);
-    --color-amber-200: oklch(0.88 0.075 85);
-    --color-amber-500: oklch(0.77 0.16 70);
-    --color-amber-600: oklch(0.68 0.16 60);
-    --color-amber-700: oklch(0.58 0.14 55);
-    --color-amber-800: oklch(0.5 0.12 55);
-
-    /* ── Rose ── */
-    --color-rose-50: oklch(0.97 0.014 10);
-    --color-rose-200: oklch(0.87 0.055 10);
-    --color-rose-500: oklch(0.58 0.195 10);
-    --color-rose-700: oklch(0.47 0.17 10);
-
-    /* ── Accent colors ── */
-    --color-indigo-500: oklch(0.55 0.17 265);
-    --color-cyan-400: oklch(0.78 0.11 210);
-    --color-teal-500: oklch(0.6 0.12 185);
-    --color-orange-500: oklch(0.7 0.155 50);
-
-    /* ── Shadows — cool-tinted, subtler ── */
-    --shadow-sm: 0 1px 2px oklch(0.2 0.015 250 / 0.05);
-    --shadow:
-        0 1px 3px oklch(0.2 0.015 250 / 0.06),
-        0 1px 2px oklch(0.2 0.015 250 / 0.04);
-    --shadow-md:
-        0 4px 6px oklch(0.2 0.015 250 / 0.05),
-        0 2px 4px oklch(0.2 0.015 250 / 0.04);
-    --shadow-lg:
-        0 8px 16px oklch(0.2 0.015 250 / 0.05),
-        0 2px 6px oklch(0.2 0.015 250 / 0.03);
-    --shadow-xl:
-        0 16px 32px oklch(0.2 0.015 250 / 0.06),
-        0 4px 8px oklch(0.2 0.015 250 / 0.03);
-    --shadow-2xl: 0 24px 48px oklch(0.2 0.015 250 / 0.1);
-
-    /* ── Radius — tighter, Telegram-like ── */
-    --radius-xl: 0.625rem; /* 10px (was 12px) */
-    --radius-2xl: 0.75rem; /* 12px (was 16px) */
-    --radius-3xl: 1rem; /* 16px (was 24px) */
-
-    /* ── Typography ── */
+    /* Typography */
     --font-sans: "Inter", system-ui, -apple-system, sans-serif;
     --font-heading: "Onest", "Inter", system-ui, -apple-system, sans-serif;
     --font-pixel: "pixelFont", "pixelFont Fallback", monospace;
 }
 
 :root {
-    --sidebar-width: 300px;
+    /* Landing brand palette (navy / slate / sky / background) */
+    --brand-dark: #152b52;
+    --brand-dark-2: #1f345a;
+    --brand-dark-3: #2a4472;
+    --brand-accent: #6781ad;
+    --brand-accent-deep: #3c5a8c;
+    --brand-sage: #e3e9f3;
+    --brand-sage-deep: #c4cfe4;
+    --brand-cream: #f4f5f7;
+    --brand-cream-2: #e3e7ed;
+    --brand-border: #cbd1db;
+    --brand-text: #171b24;
+    --brand-text-dim: #515969;
 
-    --background: oklch(0.995 0.002 245);
-    --foreground: oklch(0.155 0.014 250);
+    --sidebar-width: 260px;
 
-    --primary: #2aabee; /* Telegram blue */
-    --primary-foreground: oklch(1 0 0);
+    --background: #f4f5f7;
+    --foreground: #171b24;
 
-    --secondary: oklch(0.955 0.008 245);
-    --secondary-foreground: oklch(0.18 0.012 250);
+    --primary: #152b52;
+    --primary-foreground: #ffffff;
 
-    --muted: oklch(0.955 0.008 245);
-    --muted-foreground: oklch(0.46 0.02 250);
+    --secondary: #f1f3f6;
+    --secondary-foreground: #171b24;
 
-    --accent: oklch(0.945 0.012 245);
-    --accent-foreground: oklch(0.155 0.014 250);
+    --muted: #f4f5f7;
+    --muted-foreground: #6b7584;
 
-    --destructive: oklch(0.58 0.22 18);
-    --destructive-foreground: oklch(1 0 0);
+    --accent: #e3e9f3;
+    --accent-foreground: #152b52;
 
-    --border: oklch(0.915 0.012 245);
-    --input: oklch(0.935 0.008 245);
-    --ring: #2aabee;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
 
-    --card: oklch(1 0.002 245);
-    --card-foreground: oklch(0.155 0.014 250);
+    --border: #e3e7ed;
+    --input: #ffffff;
+    --ring: #152b52;
 
-    --popover: oklch(1 0.002 245);
-    --popover-foreground: oklch(0.155 0.014 250);
+    --card: #ffffff;
+    --card-foreground: #171b24;
 
-    --sidebar-background: oklch(0.975 0.008 245);
-    --sidebar-foreground: oklch(0.38 0.02 250);
-    --sidebar-primary: #2aabee;
-    --sidebar-primary-foreground: oklch(1 0 0);
-    --sidebar-accent: oklch(0.94 0.012 245);
-    --sidebar-accent-foreground: oklch(0.14 0.012 250);
-    --sidebar-border: oklch(0.92 0.008 245);
-    --sidebar-ring: #2aabee;
+    --popover: #ffffff;
+    --popover-foreground: #171b24;
+
+    --sidebar-background: #152b52;
+    --sidebar-foreground: #c4cfe4;
+    --sidebar-primary: #ffffff;
+    --sidebar-primary-foreground: #152b52;
+    --sidebar-accent: #1f345a;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #1f345a;
+    --sidebar-ring: #ffffff;
 }
 
-.dark {
-    --sidebar-width: 300px;
-
-    --background: oklch(0.15 0.012 250);
-    --foreground: oklch(0.96 0.004 245);
-
-    --primary: #38bdf8;
-    --primary-foreground: oklch(1 0 0);
-
-    --secondary: oklch(0.21 0.012 250);
-    --secondary-foreground: oklch(0.94 0.004 245);
-
-    --muted: oklch(0.21 0.012 250);
-    --muted-foreground: oklch(0.58 0.016 250);
-
-    --accent: oklch(0.23 0.014 250);
-    --accent-foreground: oklch(0.96 0.004 245);
-
-    --destructive: oklch(0.58 0.22 18);
-    --destructive-foreground: oklch(1 0 0);
-
-    --border: oklch(0.24 0.014 250);
-    --input: oklch(0.22 0.012 250);
-    --ring: #38bdf8;
-
-    --card: oklch(0.18 0.012 250);
-    --card-foreground: oklch(0.96 0.004 245);
-
-    --popover: oklch(0.18 0.012 250);
-    --popover-foreground: oklch(0.96 0.004 245);
-
-    --sidebar-background: oklch(0.17 0.012 250);
-    --sidebar-foreground: oklch(0.58 0.016 250);
-    --sidebar-primary: #38bdf8;
-    --sidebar-primary-foreground: oklch(1 0 0);
-    --sidebar-accent: oklch(0.24 0.014 250);
-    --sidebar-accent-foreground: oklch(0.96 0.004 245);
-    --sidebar-border: oklch(0.24 0.012 250);
-    --sidebar-ring: #38bdf8;
+html,
+body,
+#root {
+    height: 100%;
 }
 
 body {
-    background-color: oklch(0.975 0.008 245);
+    background-color: var(--background);
     color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Offset for sticky header when jumping via #anchor */
+section[id] {
+    scroll-margin-top: 96px;
 }
 
 h1,
@@ -252,33 +183,15 @@ h3,
 h4,
 h5,
 h6 {
-    font-family: var(--font-heading), sans-serif;
+    font-family: var(--font-heading);
+    letter-spacing: -0.01em;
 }
 
-.hide-scrollbar::-webkit-scrollbar {
-    display: none;
-}
-.hide-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
-
-/* Prevent iOS Safari zoom on input focus (requires font-size >= 16px) */
-@supports (-webkit-touch-callout: none) {
-    input,
-    textarea,
-    select {
-        font-size: 16px !important;
-    }
-}
-
-/* Interactive element cursors */
+/* Cursor niceties */
 button:not(:disabled),
 [role="button"]:not(:disabled),
 select:not(:disabled),
 a,
-input[type="checkbox"],
-input[type="radio"],
 label[for] {
     cursor: pointer;
 }
@@ -291,37 +204,46 @@ textarea:disabled {
     cursor: not-allowed;
 }
 
-/* Gentle floating animation */
-@keyframes float-gentle {
-    0%,
-    100% {
-        transform: translateY(0);
+/* iOS zoom prevention */
+@supports (-webkit-touch-callout: none) {
+    input,
+    textarea,
+    select {
+        font-size: 16px !important;
     }
-    50% {
-        transform: translateY(-6px);
-    }
-}
-.animate-float-gentle {
-    animation: float-gentle 3s ease-in-out infinite;
 }
 
-/* Page heading style */
-.page-heading {
-    font-family: var(--font-heading), sans-serif;
-    font-weight: 800;
-    font-size: 30px;
-    letter-spacing: -0.025em;
-    line-height: 1.1;
+/* Animations */
+@keyframes soft-pulse {
+    0%,
+    100% {
+        opacity: 0.8;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+@keyframes fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(2px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-soft-pulse {
+    animation: soft-pulse 2s ease-in-out infinite;
+}
+
+.animate-fade-in-up {
+    animation: fade-in-up 0.15s ease-out forwards;
 }
 
 @layer utilities {
-    .site-container {
-        width: 100%;
-        max-width: 1200px;
-        margin-inline: auto;
-        padding-inline: 1rem;
-    }
-
     .font-heading {
         font-family: var(--font-heading), sans-serif;
     }
@@ -330,21 +252,27 @@ textarea:disabled {
         font-family: var(--font-pixel), var(--font-heading), sans-serif;
     }
 
-    /* Mobile safe areas */
-    .safe-area-top {
-        padding-top: env(safe-area-inset-top, 0px);
-    }
-
-    .safe-area-bottom {
-        padding-bottom: env(safe-area-inset-bottom, 0px);
-    }
-
-    /* Hide scrollbar utility */
-    .no-scrollbar::-webkit-scrollbar {
+    .hide-scrollbar::-webkit-scrollbar {
         display: none;
     }
-    .no-scrollbar {
+    .hide-scrollbar {
         -ms-overflow-style: none;
         scrollbar-width: none;
+    }
+
+    /* Gradient brand tile */
+    .bg-sea-gradient {
+        background:
+            radial-gradient(
+                circle at 30% 20%,
+                rgba(255, 255, 255, 0.08),
+                transparent 40%
+            ),
+            radial-gradient(
+                circle at 70% 80%,
+                rgba(149, 167, 200, 0.15),
+                transparent 50%
+            ),
+            #152b52;
     }
 }

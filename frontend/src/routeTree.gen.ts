@@ -21,6 +21,7 @@ import { Route as GoManagerRouteImport } from './routes/go.manager'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as AdminClientsRouteImport } from './routes/admin/clients'
 import { Route as AuthWelcomeRouteImport } from './routes/_auth.welcome'
+import { Route as AuthRegisterRouteImport } from './routes/_auth.register'
 import { Route as AuthLoginRouteImport } from './routes/_auth.login'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppPromptsRouteImport } from './routes/_app.prompts'
@@ -28,9 +29,13 @@ import { Route as AppMyChatRouteImport } from './routes/_app.my-chat'
 import { Route as AppLeadsRouteImport } from './routes/_app.leads'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppChatsRouteImport } from './routes/_app.chats'
+import { Route as AppChatRouteImport } from './routes/_app.chat'
 import { Route as AppBalanceRouteImport } from './routes/_app.balance'
+import { Route as AppAppealsRouteImport } from './routes/_app.appeals'
+import { Route as AppAccessRouteImport } from './routes/_app.access'
 import { Route as AdminUtmIndexRouteImport } from './routes/admin/utm/index'
 import { Route as AdminUtmNewRouteImport } from './routes/admin/utm/new'
+import { Route as AppChatChatIdRouteImport } from './routes/_app.chat.$chatId'
 import { Route as AuthAuthOauthCallbackRouteImport } from './routes/_auth.auth.oauth.callback'
 
 const GuideRoute = GuideRouteImport.update({
@@ -91,6 +96,11 @@ const AuthWelcomeRoute = AuthWelcomeRouteImport.update({
   path: '/welcome',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthRegisterRoute = AuthRegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthLoginRoute = AuthLoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -126,9 +136,24 @@ const AppChatsRoute = AppChatsRouteImport.update({
   path: '/chats',
   getParentRoute: () => AppRoute,
 } as any)
+const AppChatRoute = AppChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppBalanceRoute = AppBalanceRouteImport.update({
   id: '/balance',
   path: '/balance',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAppealsRoute = AppAppealsRouteImport.update({
+  id: '/appeals',
+  path: '/appeals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAccessRoute = AppAccessRouteImport.update({
+  id: '/access',
+  path: '/access',
   getParentRoute: () => AppRoute,
 } as any)
 const AdminUtmIndexRoute = AdminUtmIndexRouteImport.update({
@@ -141,6 +166,11 @@ const AdminUtmNewRoute = AdminUtmNewRouteImport.update({
   path: '/utm/new',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AppChatChatIdRoute = AppChatChatIdRouteImport.update({
+  id: '/$chatId',
+  path: '/$chatId',
+  getParentRoute: () => AppChatRoute,
+} as any)
 const AuthAuthOauthCallbackRoute = AuthAuthOauthCallbackRouteImport.update({
   id: '/auth/oauth/callback',
   path: '/auth/oauth/callback',
@@ -152,7 +182,10 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteRouteWithChildren
   '/$': typeof SplatRoute
   '/guide': typeof GuideRoute
+  '/access': typeof AppAccessRoute
+  '/appeals': typeof AppAppealsRoute
   '/balance': typeof AppBalanceRoute
+  '/chat': typeof AppChatRouteWithChildren
   '/chats': typeof AppChatsRoute
   '/dashboard': typeof AppDashboardRoute
   '/leads': typeof AppLeadsRoute
@@ -160,12 +193,14 @@ export interface FileRoutesByFullPath {
   '/prompts': typeof AppPromptsRoute
   '/settings': typeof AppSettingsRoute
   '/login': typeof AuthLoginRoute
+  '/register': typeof AuthRegisterRoute
   '/welcome': typeof AuthWelcomeRoute
   '/admin/clients': typeof AdminClientsRoute
   '/admin/login': typeof AdminLoginRoute
   '/go/manager': typeof GoManagerRoute
   '/utm/$code': typeof UtmCodeRoute
   '/admin/': typeof AdminIndexRoute
+  '/chat/$chatId': typeof AppChatChatIdRoute
   '/admin/utm/new': typeof AdminUtmNewRoute
   '/admin/utm/': typeof AdminUtmIndexRoute
   '/auth/oauth/callback': typeof AuthAuthOauthCallbackRoute
@@ -174,7 +209,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/guide': typeof GuideRoute
+  '/access': typeof AppAccessRoute
+  '/appeals': typeof AppAppealsRoute
   '/balance': typeof AppBalanceRoute
+  '/chat': typeof AppChatRouteWithChildren
   '/chats': typeof AppChatsRoute
   '/dashboard': typeof AppDashboardRoute
   '/leads': typeof AppLeadsRoute
@@ -182,12 +220,14 @@ export interface FileRoutesByTo {
   '/prompts': typeof AppPromptsRoute
   '/settings': typeof AppSettingsRoute
   '/login': typeof AuthLoginRoute
+  '/register': typeof AuthRegisterRoute
   '/welcome': typeof AuthWelcomeRoute
   '/admin/clients': typeof AdminClientsRoute
   '/admin/login': typeof AdminLoginRoute
   '/go/manager': typeof GoManagerRoute
   '/utm/$code': typeof UtmCodeRoute
   '/admin': typeof AdminIndexRoute
+  '/chat/$chatId': typeof AppChatChatIdRoute
   '/admin/utm/new': typeof AdminUtmNewRoute
   '/admin/utm': typeof AdminUtmIndexRoute
   '/auth/oauth/callback': typeof AuthAuthOauthCallbackRoute
@@ -200,7 +240,10 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/_auth': typeof AuthRouteWithChildren
   '/guide': typeof GuideRoute
+  '/_app/access': typeof AppAccessRoute
+  '/_app/appeals': typeof AppAppealsRoute
   '/_app/balance': typeof AppBalanceRoute
+  '/_app/chat': typeof AppChatRouteWithChildren
   '/_app/chats': typeof AppChatsRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/leads': typeof AppLeadsRoute
@@ -208,12 +251,14 @@ export interface FileRoutesById {
   '/_app/prompts': typeof AppPromptsRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_auth/login': typeof AuthLoginRoute
+  '/_auth/register': typeof AuthRegisterRoute
   '/_auth/welcome': typeof AuthWelcomeRoute
   '/admin/clients': typeof AdminClientsRoute
   '/admin/login': typeof AdminLoginRoute
   '/go/manager': typeof GoManagerRoute
   '/utm/$code': typeof UtmCodeRoute
   '/admin/': typeof AdminIndexRoute
+  '/_app/chat/$chatId': typeof AppChatChatIdRoute
   '/admin/utm/new': typeof AdminUtmNewRoute
   '/admin/utm/': typeof AdminUtmIndexRoute
   '/_auth/auth/oauth/callback': typeof AuthAuthOauthCallbackRoute
@@ -225,7 +270,10 @@ export interface FileRouteTypes {
     | '/admin'
     | '/$'
     | '/guide'
+    | '/access'
+    | '/appeals'
     | '/balance'
+    | '/chat'
     | '/chats'
     | '/dashboard'
     | '/leads'
@@ -233,12 +281,14 @@ export interface FileRouteTypes {
     | '/prompts'
     | '/settings'
     | '/login'
+    | '/register'
     | '/welcome'
     | '/admin/clients'
     | '/admin/login'
     | '/go/manager'
     | '/utm/$code'
     | '/admin/'
+    | '/chat/$chatId'
     | '/admin/utm/new'
     | '/admin/utm/'
     | '/auth/oauth/callback'
@@ -247,7 +297,10 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/guide'
+    | '/access'
+    | '/appeals'
     | '/balance'
+    | '/chat'
     | '/chats'
     | '/dashboard'
     | '/leads'
@@ -255,12 +308,14 @@ export interface FileRouteTypes {
     | '/prompts'
     | '/settings'
     | '/login'
+    | '/register'
     | '/welcome'
     | '/admin/clients'
     | '/admin/login'
     | '/go/manager'
     | '/utm/$code'
     | '/admin'
+    | '/chat/$chatId'
     | '/admin/utm/new'
     | '/admin/utm'
     | '/auth/oauth/callback'
@@ -272,7 +327,10 @@ export interface FileRouteTypes {
     | '/_app'
     | '/_auth'
     | '/guide'
+    | '/_app/access'
+    | '/_app/appeals'
     | '/_app/balance'
+    | '/_app/chat'
     | '/_app/chats'
     | '/_app/dashboard'
     | '/_app/leads'
@@ -280,12 +338,14 @@ export interface FileRouteTypes {
     | '/_app/prompts'
     | '/_app/settings'
     | '/_auth/login'
+    | '/_auth/register'
     | '/_auth/welcome'
     | '/admin/clients'
     | '/admin/login'
     | '/go/manager'
     | '/utm/$code'
     | '/admin/'
+    | '/_app/chat/$chatId'
     | '/admin/utm/new'
     | '/admin/utm/'
     | '/_auth/auth/oauth/callback'
@@ -388,6 +448,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthWelcomeRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/register': {
+      id: '/_auth/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof AuthRegisterRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/login': {
       id: '/_auth/login'
       path: '/login'
@@ -437,11 +504,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppChatsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/chat': {
+      id: '/_app/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof AppChatRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/balance': {
       id: '/_app/balance'
       path: '/balance'
       fullPath: '/balance'
       preLoaderRoute: typeof AppBalanceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/appeals': {
+      id: '/_app/appeals'
+      path: '/appeals'
+      fullPath: '/appeals'
+      preLoaderRoute: typeof AppAppealsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/access': {
+      id: '/_app/access'
+      path: '/access'
+      fullPath: '/access'
+      preLoaderRoute: typeof AppAccessRouteImport
       parentRoute: typeof AppRoute
     }
     '/admin/utm/': {
@@ -457,6 +545,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/utm/new'
       preLoaderRoute: typeof AdminUtmNewRouteImport
       parentRoute: typeof AdminRouteRoute
+    }
+    '/_app/chat/$chatId': {
+      id: '/_app/chat/$chatId'
+      path: '/$chatId'
+      fullPath: '/chat/$chatId'
+      preLoaderRoute: typeof AppChatChatIdRouteImport
+      parentRoute: typeof AppChatRoute
     }
     '/_auth/auth/oauth/callback': {
       id: '/_auth/auth/oauth/callback'
@@ -488,8 +583,22 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
   AdminRouteRouteChildren,
 )
 
+interface AppChatRouteChildren {
+  AppChatChatIdRoute: typeof AppChatChatIdRoute
+}
+
+const AppChatRouteChildren: AppChatRouteChildren = {
+  AppChatChatIdRoute: AppChatChatIdRoute,
+}
+
+const AppChatRouteWithChildren =
+  AppChatRoute._addFileChildren(AppChatRouteChildren)
+
 interface AppRouteChildren {
+  AppAccessRoute: typeof AppAccessRoute
+  AppAppealsRoute: typeof AppAppealsRoute
   AppBalanceRoute: typeof AppBalanceRoute
+  AppChatRoute: typeof AppChatRouteWithChildren
   AppChatsRoute: typeof AppChatsRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppLeadsRoute: typeof AppLeadsRoute
@@ -499,7 +608,10 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAccessRoute: AppAccessRoute,
+  AppAppealsRoute: AppAppealsRoute,
   AppBalanceRoute: AppBalanceRoute,
+  AppChatRoute: AppChatRouteWithChildren,
   AppChatsRoute: AppChatsRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppLeadsRoute: AppLeadsRoute,
@@ -512,12 +624,14 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface AuthRouteChildren {
   AuthLoginRoute: typeof AuthLoginRoute
+  AuthRegisterRoute: typeof AuthRegisterRoute
   AuthWelcomeRoute: typeof AuthWelcomeRoute
   AuthAuthOauthCallbackRoute: typeof AuthAuthOauthCallbackRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthLoginRoute: AuthLoginRoute,
+  AuthRegisterRoute: AuthRegisterRoute,
   AuthWelcomeRoute: AuthWelcomeRoute,
   AuthAuthOauthCallbackRoute: AuthAuthOauthCallbackRoute,
 }
