@@ -17,7 +17,7 @@ services:
     command: >
       -c "
       /opt/mssql/bin/sqlservr &
-      /usr/local/bin/restore-db.sh &
+      /bin/bash /usr/local/bin/restore-db.sh &
       wait
       "
     healthcheck:

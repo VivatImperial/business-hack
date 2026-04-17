@@ -160,6 +160,30 @@ YANDEX_GPT_BASE_URL=https://llm.api.cloud.yandex.net/foundationModels/v1
 3. Создайте API-ключ для этого аккаунта
 4. Скопируйте `folder_id` каталога и API-ключ в `.env`
 
+## OCR для KB-статей
+
+Для image-heavy KB-статей можно включить OCR inline-скриншотов через Yandex Vision OCR:
+
+```bash
+./.venv/bin/python research/extract_datasets.py --ocr-articles
+```
+
+Опциональные переменные:
+
+```bash
+YANDEX_OCR_API_KEY=your-api-key
+YANDEX_OCR_FOLDER_ID=your-folder-id
+```
+
+Если они не заданы, `extract_datasets.py --ocr-articles` попробует использовать `YANDEX_GPT_API_KEY` и `YANDEX_GPT_FOLDER_ID`.
+
+Что делает OCR-режим:
+
+- обрабатывает только inline/base64 изображения из `KBDocument.Description`;
+- распознает текст на изображении;
+- вставляет OCR-результат как markdown в место исходной картинки;
+- сохраняет одновременно `markdown` (чистый текст без картинок) и `markdown_with_ocr` (enriched-версия для chunking).
+
 ## Формат сдачи
 
 ```
