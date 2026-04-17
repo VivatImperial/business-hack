@@ -12,3 +12,5 @@ conversation.jsonl
 dist/
 build/
 *.egg-info/
+.idea
+.vscode
