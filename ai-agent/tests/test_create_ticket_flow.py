@@ -42,6 +42,35 @@ class CreateTicketFlowTests(unittest.TestCase):
         self.assertEqual(draft.evidence_ticket_ids, [42])
         self.assertIsNotNone(draft.evidence_summary)
 
+    def test_build_draft_prefers_domain_specific_service_over_generic_one(self) -> None:
+        draft = self.service.build_draft(
+            user_text="Помоги оформить заявку на проблему с VPN на ноутбуке",
+            top_tickets=[
+                {
+                    "point_id": "ticket:1",
+                    "score": 0.91,
+                    "payload": {
+                        "service": "ПРОЧЕЕ",
+                        "task_type": "Тип: Стандартный",
+                        "priority": "Низкий",
+                        "domain_tags": [],
+                    },
+                },
+                {
+                    "point_id": "ticket:2",
+                    "score": 0.82,
+                    "payload": {
+                        "service": "Удаленный доступ / VPN",
+                        "task_type": "Тип: Стандартный",
+                        "priority": "Низкий",
+                        "domain_tags": ["vpn", "удаленка"],
+                    },
+                },
+            ],
+        )
+
+        self.assertEqual(draft.suggested_service, "Удаленный доступ / VPN")
+
 
 if __name__ == "__main__":
     unittest.main()

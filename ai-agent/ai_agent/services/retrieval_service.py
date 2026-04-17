@@ -19,7 +19,7 @@ DOMAIN_HINT_RULES = {
     "почт": "почта",
 }
 QUERY_FILLER_RE = re.compile(
-    r"\b(помоги(те)?|подскажи(те)?|пожалуйста|нужно|надо|хочу|можешь|мне)\b",
+    r"\b(помоги(те)?|подскажи(те)?|пожалуйста|нужно|надо|хочу|можешь|мне|оформить|создать|завести|заявку|тикет)\b",
     re.IGNORECASE,
 )
 WS_RE = re.compile(r"\s+")
@@ -35,7 +35,7 @@ class RetrievalService:
     def retrieve(self, user_text: str, *, settings: AgentSettingsPayload) -> RetrievalResult:
         normalized_query = self.build_ticket_query(user_text)
         query_hints = self.extract_query_hints(user_text)
-        normalized_tickets = self.retrieve_ticket_candidates(normalized_query, settings=settings)
+        normalized_tickets = self.retrieve_ticket_candidates(user_text, settings=settings)
 
         used_articles = False
         normalized_articles: list[RetrievedDocument] = []
@@ -62,10 +62,41 @@ class RetrievalService:
         *,
         settings: AgentSettingsPayload,
     ) -> list[RetrievedDocument]:
-        ticket_query = self.build_ticket_query(user_text)
-        query_vector = self.embedder.embed_documents([ticket_query])[0]
-        ticket_hits = self.repository.search_ticket_cases(query_vector=query_vector, limit=settings.top_k)
-        return [self._normalize_hit(hit) for hit in ticket_hits]
+        ticket_queries = self.build_ticket_queries(user_text)
+        merged_hits: dict[str, RetrievedDocument] = {}
+        for index, ticket_query in enumerate(ticket_queries):
+            query_vector = self.embedder.embed_documents([ticket_query])[0]
+            ticket_hits = self.repository.search_ticket_cases(query_vector=query_vector, limit=settings.top_k)
+            weight = max(0.95, 1.0 - index * 0.05)
+            for hit in ticket_hits:
+                normalized = self._normalize_hit(hit)
+                weighted_score = normalized.score * weight
+                existing = merged_hits.get(normalized.point_id)
+                if existing is None:
+                    merged_hits[normalized.point_id] = normalized.model_copy(update={"score": weighted_score})
+                    continue
+                merged_hits[normalized.point_id] = existing.model_copy(
+                    update={
+                        "score": max(existing.score, weighted_score) + 0.03,
+                    }
+                )
+        return sorted(merged_hits.values(), key=lambda item: item.score, reverse=True)
+
+    def build_ticket_queries(self, user_text: str) -> list[str]:
+        normalized_query = self.build_ticket_query(user_text)
+        query_hints = self.extract_query_hints(user_text)
+        queries: list[str] = [normalized_query]
+
+        raw_query = user_text.strip()
+        if raw_query and raw_query.lower() != normalized_query:
+            queries.append(raw_query)
+
+        if query_hints:
+            hint_query = " ".join(dict.fromkeys(query_hints))
+            if hint_query and hint_query not in queries:
+                queries.append(hint_query)
+
+        return queries[:2]
 
     def retrieve_article_candidates(
         self,
@@ -122,14 +153,19 @@ class RetrievalService:
         for needle, normalized in DOMAIN_HINT_RULES.items():
             if needle in lowered and normalized not in hints:
                 hints.append(normalized)
+        if "удаленка" in hints:
+            if "vpn" not in hints:
+                hints.append("vpn")
+            if "удаленный доступ" not in hints:
+                hints.append("удаленный доступ")
         return hints
 
     def _normalize_hit(self, hit: Any) -> RetrievedDocument:
-        point_id = getattr(hit, "id", None) or hit.get("id") or hit.get("point_id")
+        payload = getattr(hit, "payload", None) or hit.get("payload") or {}
+        point_id = payload.get("point_id") or getattr(hit, "id", None) or hit.get("id") or hit.get("point_id")
         score = getattr(hit, "score", None)
         if score is None:
             score = hit.get("score", 0.0)
-        payload = getattr(hit, "payload", None) or hit.get("payload") or {}
         return RetrievedDocument(point_id=str(point_id), score=float(score), payload=payload)
 
     def _should_enrich_with_articles(self, tickets: list[RetrievedDocument]) -> bool:

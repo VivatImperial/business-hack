@@ -20,14 +20,15 @@ class QdrantRepositoryTests(unittest.TestCase):
 
     def test_search_ticket_cases_uses_ticket_collection_name(self) -> None:
         client = Mock()
-        client.search.return_value = [{"id": "ticket:1"}]
+        client.query_points.return_value = type("Response", (), {"points": [{"id": "ticket:1"}]})()
         repository = QdrantRepository(client=client)
 
         results = repository.search_ticket_cases(query_vector=[0.1, 0.2], limit=3)
 
         self.assertEqual(results, [{"id": "ticket:1"}])
-        self.assertEqual(client.search.call_args.kwargs["collection_name"], "ticket_cases")
-        self.assertEqual(client.search.call_args.kwargs["limit"], 3)
+        self.assertEqual(client.query_points.call_args.kwargs["collection_name"], "ticket_cases")
+        self.assertEqual(client.query_points.call_args.kwargs["limit"], 3)
+        self.assertEqual(client.query_points.call_args.kwargs["timeout"], 30)
 
 
 if __name__ == "__main__":

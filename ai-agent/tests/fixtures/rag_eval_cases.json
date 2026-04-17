@@ -1,5 +1,102 @@
 [
   {
+    "name": "multi_query_recovers_ticket_candidate",
+    "query": "VPN удаленка",
+    "settings": {
+      "tone_of_voice": "helpful",
+      "confidence_threshold": 0.7,
+      "top_k": 5,
+      "use_articles": true
+    },
+    "ticket_hits_sequence": [
+      [
+        {
+          "id": "ticket:401",
+          "score": 0.51,
+          "payload": {
+            "request_text": "Не работает VPN",
+            "resolution_text": "Перезапустили VPN-клиент.",
+            "resolution_quality": "strong",
+            "candidate_for_abstain": false,
+            "service": "Удаленный доступ / VPN",
+            "task_type": "Тип: Стандартный",
+            "domain_tags": ["vpn"],
+            "is_actionable": true,
+            "status": "Закрыта",
+            "priority": "Низкий"
+          }
+        }
+      ],
+      [
+        {
+          "id": "ticket:401",
+          "score": 0.56,
+          "payload": {
+            "request_text": "Не работает VPN",
+            "resolution_text": "Перезапустили VPN-клиент.",
+            "resolution_quality": "strong",
+            "candidate_for_abstain": false,
+            "service": "Удаленный доступ / VPN",
+            "task_type": "Тип: Стандартный",
+            "domain_tags": ["vpn"],
+            "is_actionable": true,
+            "status": "Закрыта",
+            "priority": "Низкий"
+          }
+        }
+      ]
+    ],
+    "article_hits": [],
+    "expected_mode": "resolve_issue",
+    "expected_decision": "answer",
+    "expected_top_ticket_ids": ["ticket:401"],
+    "expected_should_escalate": false,
+    "expected_used_articles": false
+  },
+  {
+    "name": "strong_ticket_answers_without_article_enrichment",
+    "query": "Неправильный отчет в 1С на ноутбуке",
+    "settings": {
+      "tone_of_voice": "helpful",
+      "confidence_threshold": 0.7,
+      "top_k": 5,
+      "use_articles": true
+    },
+    "ticket_hits": [
+      {
+        "id": "ticket:111",
+        "score": 0.84,
+        "payload": {
+          "request_text": "Неправильный отчет в 1С",
+          "resolution_text": "Проверьте период формирования отчета и список контрагентов.",
+          "resolution_quality": "strong",
+          "candidate_for_abstain": false,
+          "service": "1С / Отчеты",
+          "task_type": "Тип: 1С (Программисты)",
+          "domain_tags": ["1с", "отчет"],
+          "is_actionable": true,
+          "status": "Закрыта",
+          "priority": "Средний"
+        }
+      }
+    ],
+    "article_hits": [
+      {
+        "id": "article:7:0",
+        "score": 0.52,
+        "payload": {
+          "title": "Отчеты 1С",
+          "chunk_markdown": "Проверьте настройки периода."
+        }
+      }
+    ],
+    "expected_mode": "resolve_issue",
+    "expected_decision": "answer",
+    "expected_top_ticket_ids": ["ticket:111"],
+    "expected_should_escalate": false,
+    "expected_used_articles": false
+  },
+  {
     "name": "vpn_resolve_with_article_support",
     "query": "Не подключается удаленка на ноутбуке",
     "settings": {
@@ -43,6 +140,32 @@
     "expected_used_articles": true
   },
   {
+    "name": "no_ticket_recall_escalates_without_article_search",
+    "query": "Вообще непонятная новая проблема",
+    "settings": {
+      "tone_of_voice": "helpful",
+      "confidence_threshold": 0.7,
+      "top_k": 5,
+      "use_articles": true
+    },
+    "ticket_hits": [],
+    "article_hits": [
+      {
+        "id": "article:99:0",
+        "score": 0.94,
+        "payload": {
+          "title": "Случайная статья",
+          "chunk_markdown": "Какая-то статья, которую не надо использовать без ticket recall."
+        }
+      }
+    ],
+    "expected_mode": "resolve_issue",
+    "expected_decision": "escalate",
+    "expected_top_ticket_ids": [],
+    "expected_should_escalate": true,
+    "expected_used_articles": false
+  },
+  {
     "name": "create_ticket_needs_device_clarification",
     "query": "Помоги оформить заявку на проблему с VPN",
     "settings": {
@@ -74,7 +197,43 @@
     "expected_decision": "clarify",
     "expected_top_ticket_ids": ["ticket:201"],
     "expected_should_escalate": false,
-    "expected_missing_fields": ["device"]
+    "expected_missing_fields": ["device"],
+    "expected_suggested_service": "Удаленный доступ / VPN"
+  },
+  {
+    "name": "create_ticket_with_complete_context_returns_draft",
+    "query": "Помоги оформить заявку: не работает VPN на ноутбуке",
+    "settings": {
+      "tone_of_voice": "helpful",
+      "confidence_threshold": 0.7,
+      "top_k": 5,
+      "use_articles": true
+    },
+    "ticket_hits": [
+      {
+        "id": "ticket:202",
+        "score": 0.72,
+        "payload": {
+          "request_text": "Не подключается удаленка через VPN на ноутбуке",
+          "resolution_text": "Перенастроили профиль VPN и восстановили подключение.",
+          "resolution_quality": "strong",
+          "candidate_for_abstain": false,
+          "service": "Удаленный доступ / VPN",
+          "task_type": "Тип: Стандартный",
+          "domain_tags": ["vpn", "удаленка"],
+          "is_actionable": true,
+          "status": "Закрыта",
+          "priority": "Низкий"
+        }
+      }
+    ],
+    "article_hits": [],
+    "expected_mode": "create_ticket",
+    "expected_decision": "answer",
+    "expected_top_ticket_ids": ["ticket:202"],
+    "expected_should_escalate": false,
+    "expected_missing_fields": [],
+    "expected_suggested_service": "Удаленный доступ / VPN"
   },
   {
     "name": "conflicting_ticket_escalates",

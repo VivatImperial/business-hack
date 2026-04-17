@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import uuid
 from typing import Any
 
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
+
+
+QDRANT_POINT_NAMESPACE = uuid.uuid5(uuid.NAMESPACE_URL, "baltiyskiy-bereg-ai-agent")
 
 
 class QdrantRepository:
@@ -36,7 +40,7 @@ class QdrantRepository:
         self._upsert_rows(self.article_collection, rows)
 
     def search_ticket_cases(self, query_vector: list[float], limit: int = 5, query_filter: Any | None = None):
-        return self.client.search(
+        return self._query_collection(
             collection_name=self.ticket_collection,
             query_vector=query_vector,
             limit=limit,
@@ -44,7 +48,7 @@ class QdrantRepository:
         )
 
     def search_article_chunks(self, query_vector: list[float], limit: int = 5, query_filter: Any | None = None):
-        return self.client.search(
+        return self._query_collection(
             collection_name=self.article_collection,
             query_vector=query_vector,
             limit=limit,
@@ -66,10 +70,43 @@ class QdrantRepository:
             return
         points = [
             PointStruct(
-                id=row["point_id"],
+                id=self._to_qdrant_id(row["point_id"]),
                 vector=row["vector"],
-                payload=row.get("payload") or {},
+                payload={
+                    **(row.get("payload") or {}),
+                    "point_id": row["point_id"],
+                },
             )
             for row in rows
         ]
         self.client.upsert(collection_name=collection_name, points=points)
+
+    def _to_qdrant_id(self, point_id: str) -> str:
+        return str(uuid.uuid5(QDRANT_POINT_NAMESPACE, point_id))
+
+    def _query_collection(
+        self,
+        *,
+        collection_name: str,
+        query_vector: list[float],
+        limit: int,
+        query_filter: Any | None,
+    ):
+        query_points = getattr(self.client, "query_points", None)
+        if callable(query_points):
+            response = query_points(
+                collection_name=collection_name,
+                query=query_vector,
+                limit=limit,
+                query_filter=query_filter,
+                with_payload=True,
+                timeout=30,
+            )
+            return getattr(response, "points", response)
+
+        return self.client.search(
+            collection_name=collection_name,
+            query_vector=query_vector,
+            limit=limit,
+            query_filter=query_filter,
+        )

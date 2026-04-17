@@ -20,14 +20,20 @@ class FakeEmbedder:
 
 
 class FixtureRepository:
-    def __init__(self, *, ticket_hits, article_hits) -> None:
+    def __init__(self, *, ticket_hits=None, ticket_hits_sequence=None, article_hits=None, article_hits_sequence=None) -> None:
         self.ticket_hits = ticket_hits
+        self.ticket_hits_sequence = list(ticket_hits_sequence or [])
         self.article_hits = article_hits
+        self.article_hits_sequence = list(article_hits_sequence or [])
 
     def search_ticket_cases(self, query_vector, limit, query_filter=None):
+        if self.ticket_hits_sequence:
+            return self.ticket_hits_sequence.pop(0)
         return self.ticket_hits
 
     def search_article_chunks(self, query_vector, limit, query_filter=None):
+        if self.article_hits_sequence:
+            return self.article_hits_sequence.pop(0)
         return self.article_hits
 
 
@@ -42,8 +48,10 @@ class RagEvalTests(unittest.IsolatedAsyncioTestCase):
                 mode_router=ModeRouter(),
                 retrieval_service=RetrievalService(
                     repository=FixtureRepository(
-                        ticket_hits=case["ticket_hits"],
-                        article_hits=case["article_hits"],
+                        ticket_hits=case.get("ticket_hits"),
+                        ticket_hits_sequence=case.get("ticket_hits_sequence"),
+                        article_hits=case.get("article_hits"),
+                        article_hits_sequence=case.get("article_hits_sequence"),
                     ),
                     embedder=FakeEmbedder(),
                 ),
@@ -73,6 +81,9 @@ class RagEvalTests(unittest.IsolatedAsyncioTestCase):
             if "expected_missing_fields" in case:
                 self.assertIsNotNone(response.suggested_ticket, case["name"])
                 self.assertEqual(response.suggested_ticket.missing_fields, case["expected_missing_fields"], case["name"])
+            if "expected_suggested_service" in case:
+                self.assertIsNotNone(response.suggested_ticket, case["name"])
+                self.assertEqual(response.suggested_ticket.suggested_service, case["expected_suggested_service"], case["name"])
 
 
 if __name__ == "__main__":

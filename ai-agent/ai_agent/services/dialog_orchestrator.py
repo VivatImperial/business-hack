@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
+import re
 
 from ai_agent.schemas.generation import AgentRespondResponse
 from ai_agent.schemas.inference import AgentRespondRequest
@@ -12,6 +13,17 @@ from ai_agent.services.mode_router import ModeRouter
 from ai_agent.services.rerank_service import RerankService
 from ai_agent.services.retrieval_service import RetrievalService
 from ai_agent.services.ticket_draft_service import TicketDraftService
+
+
+ABSTAIN_RESPONSE_RE = re.compile(
+    r"(нет информации|недостаточно данных|недостаточно информации|не удалось найти|контекст не содержит|не найдено надежного решения)",
+    re.IGNORECASE,
+)
+CLARIFY_RESPONSE_RE = re.compile(
+    r"(уточните|пожалуйста, уточните|какую систему|какие именно симптомы|на каком устройстве)",
+    re.IGNORECASE,
+)
+QUESTION_LINE_RE = re.compile(r"^\s*(?:[-*]|\d+[.)])\s+.*\?\s*$")
 
 
 class DialogOrchestrator:
@@ -101,6 +113,9 @@ class DialogOrchestrator:
                     draft=suggested_ticket,
                     tone_of_voice=request.settings.tone_of_voice,
                 )
+                assistant_message, llm_questions = self._trim_question_lines(assistant_message, max_questions=2)
+                if llm_questions:
+                    decision = "clarify"
                 resolved_by = "assistant"
             elif decision == "clarify":
                 assistant_message = self.answer_service.build_clarify_message(draft=suggested_ticket)
@@ -114,7 +129,16 @@ class DialogOrchestrator:
                 retrieval=retrieval,
                 tone_of_voice=request.settings.tone_of_voice,
             )
-            resolved_by = "assistant"
+            if ABSTAIN_RESPONSE_RE.search(assistant_message) and CLARIFY_RESPONSE_RE.search(assistant_message):
+                decision = "clarify"
+                confidence = min(confidence, 0.2)
+                resolved_by = "assistant"
+            elif ABSTAIN_RESPONSE_RE.search(assistant_message):
+                decision = "escalate"
+                confidence = min(confidence, 0.2)
+                resolved_by = "human"
+            else:
+                resolved_by = "assistant"
         elif decision == "clarify":
             assistant_message = self.answer_service.build_clarify_message()
             resolved_by = "assistant"
@@ -138,3 +162,16 @@ class DialogOrchestrator:
             resolved_by=resolved_by,
             processed_at=dt.datetime.now(dt.UTC),
         )
+
+    def _trim_question_lines(self, text: str, *, max_questions: int) -> tuple[str, list[str]]:
+        lines = text.splitlines()
+        kept_lines: list[str] = []
+        question_lines: list[str] = []
+        for line in lines:
+            if QUESTION_LINE_RE.match(line):
+                if len(question_lines) < max_questions:
+                    question_lines.append(line)
+                    kept_lines.append(line)
+                continue
+            kept_lines.append(line)
+        return "\n".join(kept_lines).strip(), question_lines

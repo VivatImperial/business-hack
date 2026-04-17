@@ -27,6 +27,13 @@ class YandexGptClient:
     def is_configured(self) -> bool:
         return bool(self.api_key and self.model_name)
 
+    def _resolve_model_name(self) -> str:
+        if self.model_name.startswith("gpt://"):
+            return self.model_name
+        if not self.folder_id or self.folder_id == "your-folder-id":
+            raise RuntimeError("YANDEX_GPT_FOLDER_ID must be set to call the native YandexGPT API.")
+        return f"gpt://{self.folder_id}/{self.model_name.lstrip('/')}"
+
     async def generate(self, *, system_prompt: str, user_prompt: str, temperature: float = 0.1) -> str:
         if not self.is_configured:
             raise RuntimeError("YandexGPT client is not configured.")
@@ -39,7 +46,7 @@ class YandexGptClient:
             headers["x-folder-id"] = self.folder_id
 
         payload: dict[str, Any] = {
-            "model": self.model_name,
+            "model": self._resolve_model_name(),
             "temperature": temperature,
             "messages": [
                 {"role": "system", "content": system_prompt},
