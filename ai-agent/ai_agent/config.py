@@ -17,7 +17,7 @@ class Settings(BaseSettings):
 
     service_name: str = "ai-agent"
     service_host: str = "0.0.0.0"
-    service_port: int = 8080
+    service_port: int = 8090
     service_reload: bool = False
     enable_runtime_orchestrator: bool = Field(default=False, alias="AI_AGENT_ENABLE_ORCHESTRATOR")
     yandex_gpt_model: str = Field(default="yandexgpt/latest", alias="YANDEX_GPT_MODEL")

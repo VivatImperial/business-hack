@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 
+from ai_agent.schemas.generation import TicketDraftSuggestion
 from ai_agent.schemas.inference import AgentRespondRequest, AgentSettingsPayload
 from ai_agent.schemas.retrieval import RetrievalResult
 from ai_agent.services.dialog_orchestrator import DialogOrchestrator
@@ -37,7 +38,9 @@ class FakeAnswerService:
     async def build_resolve_issue_answer(self, *, user_text: str, retrieval: RetrievalResult, tone_of_voice: str) -> str:
         return "resolve"
 
-    def build_clarify_message(self) -> str:
+    def build_clarify_message(self, *, draft: TicketDraftSuggestion | None = None) -> str:
+        if draft and draft.clarifying_questions:
+            return draft.clarifying_questions[0]
         return "clarify-question"
 
     def build_escalation_message(self) -> str:
@@ -49,7 +52,16 @@ class FakeAnswerService:
 
 class FakeTicketDraftService:
     def build_draft(self, *, user_text: str, top_tickets: list[dict]):
-        raise AssertionError("Draft should not be built when decision is clarify.")
+        return TicketDraftSuggestion(
+            normalized_request=user_text,
+            missing_fields=["device"],
+            clarifying_questions=["На каком устройстве возникает проблема?"],
+            suggested_service=None,
+            suggested_task_type=None,
+            suggested_priority=None,
+            evidence_ticket_ids=[],
+            evidence_summary=None,
+        )
 
 
 class DialogOrchestratorTests(unittest.IsolatedAsyncioTestCase):
@@ -81,8 +93,10 @@ class DialogOrchestratorTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(response.mode, "create_ticket")
         self.assertEqual(response.decision, "clarify")
-        self.assertEqual(response.assistant_message, "clarify-question")
-        self.assertIsNone(response.suggested_ticket)
+        self.assertEqual(response.assistant_message, "На каком устройстве возникает проблема?")
+        self.assertIsNotNone(response.suggested_ticket)
+        self.assertEqual(response.suggested_ticket.missing_fields, ["device"])
+        self.assertEqual(response.ticket_draft["clarifying_questions"], ["На каком устройстве возникает проблема?"])
 
 
 if __name__ == "__main__":

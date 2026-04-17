@@ -90,18 +90,20 @@ class DialogOrchestrator:
         suggested_ticket = None
 
         if mode == "create_ticket":
+            suggested_ticket = self.ticket_draft_service.build_draft(
+                user_text=request.user_text,
+                top_tickets=[ticket.model_dump() for ticket in retrieval.tickets],
+            )
+            if decision != "escalate" and suggested_ticket.clarifying_questions:
+                decision = "clarify"
             if decision == "answer":
-                suggested_ticket = self.ticket_draft_service.build_draft(
-                    user_text=request.user_text,
-                    top_tickets=[ticket.model_dump() for ticket in retrieval.tickets],
-                )
                 assistant_message = await self.answer_service.build_create_ticket_message(
                     draft=suggested_ticket,
                     tone_of_voice=request.settings.tone_of_voice,
                 )
                 resolved_by = "assistant"
             elif decision == "clarify":
-                assistant_message = self.answer_service.build_clarify_message()
+                assistant_message = self.answer_service.build_clarify_message(draft=suggested_ticket)
                 resolved_by = "assistant"
             else:
                 assistant_message = self.answer_service.build_escalation_message()

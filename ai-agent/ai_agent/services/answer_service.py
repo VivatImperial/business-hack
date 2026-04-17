@@ -73,7 +73,9 @@ class AnswerService:
             f"{draft.suggested_priority or 'н/д'}."
         )
 
-    def build_clarify_message(self) -> str:
+    def build_clarify_message(self, *, draft: TicketDraftSuggestion | None = None) -> str:
+        if draft and draft.clarifying_questions:
+            return draft.clarifying_questions[0]
         return "Уточните, пожалуйста, на каком устройстве и в какой системе возникает проблема."
 
     def build_escalation_message(self) -> str:
@@ -99,5 +101,6 @@ class AnswerService:
         parts = []
         for index, hit in enumerate([*retrieval.tickets[:3], *retrieval.articles[:3]], start=1):
             text = hit.payload.get("resolution_text") or hit.payload.get("chunk_markdown") or hit.payload.get("request_text") or ""
-            parts.append(f"[{index}] {text}")
+            title = hit.payload.get("title") or hit.payload.get("service") or hit.point_id
+            parts.append(f"[{index}] SOURCE: {title}\n{text}")
         return "\n\n".join(parts)

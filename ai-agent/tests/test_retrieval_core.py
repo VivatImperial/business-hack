@@ -19,11 +19,13 @@ class FakeEmbedder:
 
 
 class FakeRepository:
-    def __init__(self) -> None:
+    def __init__(self, *, ticket_hits=None, article_hits=None) -> None:
         self.article_searches = 0
+        self.ticket_hits = ticket_hits
+        self.article_hits = article_hits
 
     def search_ticket_cases(self, query_vector, limit, query_filter=None):
-        return [
+        return self.ticket_hits if self.ticket_hits is not None else [
             {
                 "id": "ticket:10",
                 "score": 0.58,
@@ -43,7 +45,7 @@ class FakeRepository:
 
     def search_article_chunks(self, query_vector, limit, query_filter=None):
         self.article_searches += 1
-        return [
+        return self.article_hits if self.article_hits is not None else [
             {
                 "id": "article:5:0",
                 "score": 0.51,
@@ -77,6 +79,25 @@ class RetrievalCoreTests(unittest.TestCase):
         self.assertIn("Удаленный доступ / VPN", embedder.queries[1])
         self.assertIn("Тип: Стандартный", embedder.queries[1])
         self.assertIn("vpn", embedder.queries[1])
+
+    def test_article_search_is_skipped_when_ticket_candidates_are_missing(self) -> None:
+        repository = FakeRepository(ticket_hits=[], article_hits=[{"id": "article:9:0", "score": 0.9, "payload": {"title": "VPN"}}])
+        embedder = FakeEmbedder()
+        service = RetrievalService(repository=repository, embedder=embedder)
+        settings = AgentSettingsPayload(
+            tone_of_voice="helpful",
+            confidence_threshold=0.7,
+            top_k=5,
+            use_articles=True,
+        )
+
+        result = service.retrieve("Не подключается удаленка", settings=settings)
+
+        self.assertEqual(result.tickets, [])
+        self.assertEqual(result.articles, [])
+        self.assertFalse(result.used_articles)
+        self.assertEqual(repository.article_searches, 0)
+        self.assertEqual(len(embedder.queries), 1)
 
     def test_rerank_demotes_rejection_like_candidates(self) -> None:
         service = RerankService()
@@ -146,10 +167,10 @@ class RetrievalCoreTests(unittest.TestCase):
             tickets=[
                 RetrievedDocument(
                     point_id="ticket:200",
-                    score=0.6,
+                    score=0.66,
                     payload={
-                        "resolution_quality": "weak",
-                        "candidate_for_abstain": True,
+                        "resolution_quality": "strong",
+                        "candidate_for_abstain": False,
                         "is_actionable": True,
                         "status": "Закрыта",
                         "resolution_text": "Проверьте подключение.",
@@ -169,6 +190,30 @@ class RetrievalCoreTests(unittest.TestCase):
         decision = gate.decide(mode="resolve_issue", retrieval=retrieval, threshold=0.7)
 
         self.assertEqual(decision, "answer")
+
+    def test_create_ticket_clarifies_for_conflicting_ticket_match(self) -> None:
+        gate = ConfidenceService()
+        retrieval = RetrievalResult(
+            tickets=[
+                RetrievedDocument(
+                    point_id="ticket:555",
+                    score=0.91,
+                    payload={
+                        "resolution_quality": "strong",
+                        "candidate_for_abstain": False,
+                        "is_actionable": False,
+                        "status": "Отменена",
+                        "resolution_text": "Отменена, решение не применялось.",
+                    },
+                )
+            ],
+            articles=[],
+            used_articles=False,
+        )
+
+        decision = gate.decide(mode="create_ticket", retrieval=retrieval, threshold=0.7)
+
+        self.assertEqual(decision, "clarify")
 
 
 if __name__ == "__main__":

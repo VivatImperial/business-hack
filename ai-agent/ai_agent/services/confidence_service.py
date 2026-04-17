@@ -16,7 +16,14 @@ class ConfidenceService:
 
     def decide(self, *, mode: str, retrieval: RetrievalResult, threshold: float) -> str:
         if mode == "create_ticket":
-            return "answer" if retrieval.tickets else "clarify"
+            if not retrieval.tickets:
+                return "clarify"
+            top_ticket = retrieval.tickets[0]
+            if self._is_conflicting(top_ticket.payload):
+                return "clarify"
+            if top_ticket.score >= max(0.5, threshold - 0.15):
+                return "answer"
+            return "clarify"
 
         if not retrieval.tickets:
             return "escalate"

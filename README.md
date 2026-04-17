@@ -130,7 +130,7 @@ Production backend использует `Postgres` как operational storage, �
 
 - `postgres` — основное хранилище backend
 - `backend` — FastAPI admin API на `http://localhost:8000`
-- `ai-agent` — internal inference/RAG сервис на `http://localhost:8080`
+- `ai-agent` — internal inference/RAG сервис на `http://localhost:8090`
 - `mssql` — upstream service desk source
 - `qdrant` — vector storage для `ai-agent`
 

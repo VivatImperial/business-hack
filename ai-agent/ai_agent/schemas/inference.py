@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class HistoryMessage(BaseModel):
@@ -10,6 +10,13 @@ class HistoryMessage(BaseModel):
 
     role: Literal["user", "assistant", "system"]
     content: str
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_message_payload(cls, value):
+        if isinstance(value, dict) and "content" not in value and "text" in value:
+            return {**value, "content": value["text"]}
+        return value
 
 
 class AgentSettingsPayload(BaseModel):
@@ -26,7 +33,7 @@ class AgentRespondRequest(BaseModel):
 
     appeal_id: str
     message_id: str
-    employee_login: str | None = None
+    employee_login: str
     user_text: str
     history: list[HistoryMessage]
     settings: AgentSettingsPayload

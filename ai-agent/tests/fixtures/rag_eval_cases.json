@@ -1,0 +1,113 @@
+[
+  {
+    "name": "vpn_resolve_with_article_support",
+    "query": "Не подключается удаленка на ноутбуке",
+    "settings": {
+      "tone_of_voice": "helpful",
+      "confidence_threshold": 0.7,
+      "top_k": 5,
+      "use_articles": true
+    },
+    "ticket_hits": [
+      {
+        "id": "ticket:101",
+        "score": 0.66,
+        "payload": {
+          "request_text": "Не подключается удаленка через VPN",
+          "resolution_text": "Проверьте VPN-клиент.",
+          "resolution_quality": "weak",
+          "candidate_for_abstain": true,
+          "service": "Удаленный доступ / VPN",
+          "task_type": "Тип: Стандартный",
+          "domain_tags": ["vpn", "удаленка"],
+          "is_actionable": true,
+          "status": "Закрыта",
+          "priority": "Низкий"
+        }
+      }
+    ],
+    "article_hits": [
+      {
+        "id": "article:5:0",
+        "score": 0.63,
+        "payload": {
+          "title": "VPN",
+          "chunk_markdown": "Проверьте профиль подключения и перезапустите VPN-клиент."
+        }
+      }
+    ],
+    "expected_mode": "resolve_issue",
+    "expected_decision": "answer",
+    "expected_top_ticket_ids": ["ticket:101"],
+    "expected_should_escalate": false,
+    "expected_used_articles": true
+  },
+  {
+    "name": "create_ticket_needs_device_clarification",
+    "query": "Помоги оформить заявку на проблему с VPN",
+    "settings": {
+      "tone_of_voice": "helpful",
+      "confidence_threshold": 0.7,
+      "top_k": 5,
+      "use_articles": true
+    },
+    "ticket_hits": [
+      {
+        "id": "ticket:201",
+        "score": 0.48,
+        "payload": {
+          "request_text": "Не подключается удаленка через VPN",
+          "resolution_text": "Перенастроили профиль VPN.",
+          "resolution_quality": "strong",
+          "candidate_for_abstain": false,
+          "service": "Удаленный доступ / VPN",
+          "task_type": "Тип: Стандартный",
+          "domain_tags": ["vpn", "удаленка"],
+          "is_actionable": true,
+          "status": "Закрыта",
+          "priority": "Низкий"
+        }
+      }
+    ],
+    "article_hits": [],
+    "expected_mode": "create_ticket",
+    "expected_decision": "clarify",
+    "expected_top_ticket_ids": ["ticket:201"],
+    "expected_should_escalate": false,
+    "expected_missing_fields": ["device"]
+  },
+  {
+    "name": "conflicting_ticket_escalates",
+    "query": "Старое решение отменено, доступ не работает",
+    "settings": {
+      "tone_of_voice": "helpful",
+      "confidence_threshold": 0.7,
+      "top_k": 5,
+      "use_articles": true
+    },
+    "ticket_hits": [
+      {
+        "id": "ticket:301",
+        "score": 0.91,
+        "payload": {
+          "request_text": "Нет доступа",
+          "resolution_text": "Отменена, так как меняется инфраструктура.",
+          "resolution_quality": "strong",
+          "candidate_for_abstain": false,
+          "service": "Доступ",
+          "task_type": "Тип: Стандартный",
+          "domain_tags": ["доступ"],
+          "is_actionable": false,
+          "status": "Отменена",
+          "priority": "Низкий"
+        }
+      }
+    ],
+    "article_hits": [],
+    "expected_mode": "resolve_issue",
+    "expected_decision": "escalate",
+    "expected_top_ticket_ids": ["ticket:301"],
+    "expected_should_escalate": true,
+    "expected_used_articles": false
+  }
+]

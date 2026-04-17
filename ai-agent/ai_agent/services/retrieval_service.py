@@ -134,7 +134,7 @@ class RetrievalService:
 
     def _should_enrich_with_articles(self, tickets: list[RetrievedDocument]) -> bool:
         if not tickets:
-            return True
+            return False
         top_ticket = tickets[0]
         resolution_quality = str(top_ticket.payload.get("resolution_quality") or "")
         candidate_for_abstain = bool(top_ticket.payload.get("candidate_for_abstain"))

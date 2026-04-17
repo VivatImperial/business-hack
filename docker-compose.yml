@@ -37,7 +37,7 @@ services:
       YANDEX_GPT_MODEL: "${YANDEX_GPT_MODEL:-yandexgpt/latest}"
       YANDEX_GPT_BASE_URL: "${YANDEX_GPT_BASE_URL:-https://llm.api.cloud.yandex.net/v1}"
     ports:
-      - "8080:8080"
+      - "8090:8090"
     depends_on:
       mssql:
         condition: service_healthy
@@ -56,7 +56,7 @@ services:
       BACKEND_ADMIN_LOGIN: "${BACKEND_ADMIN_LOGIN:-admin}"
       BACKEND_ADMIN_EMAIL: "${BACKEND_ADMIN_EMAIL:-admin@example.com}"
       BACKEND_ADMIN_PASSWORD: "${BACKEND_ADMIN_PASSWORD:-admin12345}"
-      BACKEND_AI_AGENT_BASE_URL: "http://ai-agent:8080"
+      BACKEND_AI_AGENT_BASE_URL: "http://ai-agent:8090"
       BACKEND_RUN_MIGRATIONS_ON_STARTUP: "false"
       BACKEND_ENABLE_DEV_SEED: "${BACKEND_ENABLE_DEV_SEED:-false}"
       MSSQL_HOST: "mssql"

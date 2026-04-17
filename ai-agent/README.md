@@ -18,7 +18,7 @@ uv sync
 uv run ai-agent
 ```
 
-По умолчанию сервис поднимается на `0.0.0.0:8080`.
+По умолчанию сервис поднимается на `0.0.0.0:8090`.
 
 ## Основные переменные окружения
 
@@ -55,4 +55,20 @@ uv run ai-agent-index-mssql
 ```bash
 cd ai-agent
 uv run ai-agent-rebuild-collections --vector-size 1024
+```
+
+## RAG Eval
+
+Golden-set regression suite:
+
+```bash
+cd ai-agent
+uv run python -m unittest tests.test_rag_eval -v
+```
+
+Полный сервисный quality контур:
+
+```bash
+cd ai-agent
+uv run python -m unittest discover tests -v
 ```
