@@ -101,8 +101,6 @@ def resolve_ocr_client(args: argparse.Namespace) -> YandexOcrClient | None:
     folder_id = os.getenv("YANDEX_OCR_FOLDER_ID") or os.getenv("YANDEX_GPT_FOLDER_ID")
     if not api_key:
         raise SystemExit("OCR requested but missing YANDEX_OCR_API_KEY (or YANDEX_GPT_API_KEY)")
-    if not folder_id:
-        raise SystemExit("OCR requested but missing YANDEX_OCR_FOLDER_ID (or YANDEX_GPT_FOLDER_ID)")
     return YandexOcrClient(api_key=api_key, folder_id=folder_id)
 
 

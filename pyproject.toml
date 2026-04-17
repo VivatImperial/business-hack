@@ -8,6 +8,9 @@ dependencies = [
     "pymssql>=2.3",
     "requests>=2.31",
     "python-dotenv>=1.0",
+    "tqdm>=4.67.3",
+    "torch>=2.11.0",
+    "transformers>=5.5.4",
 ]
 
 [tool.uv]

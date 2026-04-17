@@ -184,6 +184,51 @@ YANDEX_OCR_FOLDER_ID=your-folder-id
 - вставляет OCR-результат как markdown в место исходной картинки;
 - сохраняет одновременно `markdown` (чистый текст без картинок) и `markdown_with_ocr` (enriched-версия для chunking).
 
+Для долгого resumable OCR-прогона по уже готовому `articles_source` используйте отдельный runner:
+
+```bash
+./.venv/bin/python research/ocr_articles.py
+```
+
+Он:
+
+- показывает `tqdm` progress bar;
+- пишет результат батчами;
+- хранит resume-safe checkpoint в `articles_source_ocr.working.jsonl`;
+- не заставляет повторно OCR-ить уже записанные статьи после прерывания.
+
+## Эмбеддинги по чанкам
+
+Для локального подсчета векторов по `ticket_cases` и `article_chunks` добавлен отдельный runner на `Qwen/Qwen3-Embedding-0.6B`:
+
+```bash
+./.venv/bin/python research/embed_chunks.py
+```
+
+Что он делает:
+
+- по умолчанию читает `research/data_preparation/outputs/ticket_cases.jsonl.gz` и `article_chunks.jsonl.gz`;
+- на macOS автоматически выбирает `MPS`, если он доступен;
+- пишет resumable checkpoint-файлы в `research/data_preparation/outputs/embeddings/*.working.jsonl`;
+- сохраняет финальные артефакты в `research/data_preparation/outputs/embeddings/*.jsonl.gz`;
+- хранит для каждого чанка `point_id`, `vector`, `payload`, `embedding_model`, `embedding_dim`.
+
+Полезные флаги:
+
+```bash
+./.venv/bin/python research/embed_chunks.py \
+  --device mps \
+  --embed-batch-size 8 \
+  --write-batch-size 16
+```
+
+Если нужен только один корпус, можно ограничить список файлов:
+
+```bash
+./.venv/bin/python research/embed_chunks.py \
+  --chunk-files article_chunks.jsonl.gz
+```
+
 ## Формат сдачи
 
 ```

@@ -1,6 +1,11 @@
+import gzip
+import json
+import tempfile
 import unittest
+from pathlib import Path
 
 from research.data_preparation.chunk_building import (
+    build_article_chunks,
     build_ticket_case_point,
     chunk_article_source_doc,
     estimate_tokens,
@@ -186,6 +191,65 @@ class ArticleChunkTests(unittest.TestCase):
         chunks = chunk_article_source_doc(article, target_tokens=35, hard_max_tokens=45)
         self.assertGreater(len(chunks), 1)
         self.assertTrue(all(estimate_tokens(chunk["payload"]["chunk_markdown"]) <= 45 for chunk in chunks))
+
+    def test_build_article_chunks_prefers_ocr_source_when_present(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            source_dir = Path(tmpdir) / "source"
+            output_dir = Path(tmpdir) / "output"
+            source_dir.mkdir()
+            output_dir.mkdir()
+
+            base_article = {
+                "id": 81,
+                "title": "VPN with OCR",
+                "folder_path": "IT/Remote Access",
+                "tags": ["vpn"],
+                "is_published": True,
+                "rating": 5,
+                "ocr_status": "not_applicable",
+            }
+
+            with gzip.open(source_dir / "articles_source.jsonl.gz", "wt", encoding="utf-8") as f:
+                f.write(
+                    json.dumps(
+                        {
+                            **base_article,
+                            "markdown": "# VPN\n\nОбычная версия без OCR.",
+                            "markdown_with_ocr": "# VPN\n\nОбычная версия без OCR.",
+                        },
+                        ensure_ascii=False,
+                    )
+                    + "\n"
+                )
+
+            with gzip.open(source_dir / "articles_source_ocr.jsonl.gz", "wt", encoding="utf-8") as f:
+                f.write(
+                    json.dumps(
+                        {
+                            **base_article,
+                            "markdown": "# VPN\n\nОбычная версия без OCR.",
+                            "markdown_with_ocr": "# VPN\n\n> OCR image note\n> Кнопка: Подключить",
+                            "ocr_status": "applied",
+                        },
+                        ensure_ascii=False,
+                    )
+                    + "\n"
+                )
+
+            count, output_path, source_path = build_article_chunks(
+                source_dir,
+                output_dir,
+                plain_jsonl=False,
+                target_tokens=50,
+                hard_max_tokens=120,
+            )
+
+            self.assertEqual(count, 1)
+            self.assertEqual(source_path, source_dir / "articles_source_ocr.jsonl.gz")
+            with gzip.open(output_path, "rt", encoding="utf-8") as f:
+                row = json.loads(f.readline())
+            self.assertEqual(row["payload"]["ocr_status"], "applied")
+            self.assertIn("Кнопка: Подключить", row["payload"]["chunk_markdown"])
 
 
 if __name__ == "__main__":

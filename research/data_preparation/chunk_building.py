@@ -76,6 +76,13 @@ def json_default(value: Any) -> Any:
     return str(value)
 
 
+def resolve_articles_source_path(source_dir: Path) -> Path:
+    ocr_path = source_dir / "articles_source_ocr.jsonl.gz"
+    if ocr_path.exists():
+        return ocr_path
+    return source_dir / "articles_source.jsonl.gz"
+
+
 def _flatten_custom_fields(custom_fields: dict[str, Any]) -> str:
     lines = []
     for key, value in custom_fields.items():
@@ -393,8 +400,9 @@ def build_article_chunks(
     plain_jsonl: bool,
     target_tokens: int,
     hard_max_tokens: int,
-) -> tuple[int, Path]:
-    article_docs = read_jsonl(source_dir / "articles_source.jsonl.gz")
+) -> tuple[int, Path, Path]:
+    article_source_path = resolve_articles_source_path(source_dir)
+    article_docs = read_jsonl(article_source_path)
     out, final_path = open_jsonl_writer(output_dir / "article_chunks.jsonl", plain_jsonl)
     count = 0
     try:
@@ -404,7 +412,7 @@ def build_article_chunks(
                 count += 1
     finally:
         out.close()
-    return count, final_path
+    return count, final_path, article_source_path
 
 
 def main() -> None:
@@ -414,7 +422,7 @@ def main() -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     ticket_count, ticket_path = build_ticket_cases(source_dir, output_dir, args.plain_jsonl)
-    article_count, article_path = build_article_chunks(
+    article_count, article_path, article_source_path = build_article_chunks(
         source_dir,
         output_dir,
         args.plain_jsonl,
@@ -424,7 +432,7 @@ def main() -> None:
     stats = {
         "generated_at": dt.datetime.now(dt.UTC).isoformat(),
         "ticket_cases": {"rows": ticket_count, "path": str(ticket_path)},
-        "article_chunks": {"rows": article_count, "path": str(article_path)},
+        "article_chunks": {"rows": article_count, "path": str(article_path), "source_path": str(article_source_path)},
     }
     (output_dir / "dataset_stats.json").write_text(json.dumps(stats, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"Done. Chunk stats written to: {output_dir / 'dataset_stats.json'}")

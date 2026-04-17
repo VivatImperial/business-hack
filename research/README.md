@@ -47,6 +47,14 @@ python research/extract_datasets.py
 python research/extract_datasets.py --ocr-articles
 ```
 
+Если нужен отдельный resumable OCR-runner поверх уже собранного `articles_source`:
+
+```bash
+python research/ocr_articles.py
+```
+
+Он пишет OCR-результат батчами и умеет продолжать прогон по `working`-файлу, не повторяя уже обработанные статьи.
+
 Или без активации venv:
 
 ```bash
