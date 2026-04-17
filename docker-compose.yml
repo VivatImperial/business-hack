@@ -1,4 +1,79 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres-baltbereg
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB:-baltiyskiy_bereg}"
+      POSTGRES_USER: "${POSTGRES_USER:-backend}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-backend}"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  ai-agent:
+    build:
+      context: .
+      dockerfile: ai-agent/Dockerfile
+    container_name: ai-agent-baltbereg
+    restart: unless-stopped
+    environment:
+      QDRANT_URL: "http://qdrant:6333"
+      MSSQL_HOST: "mssql"
+      MSSQL_PORT: "${MSSQL_PORT:-1433}"
+      MSSQL_DATABASE: "${MSSQL_DATABASE:-service_desk_tdbb}"
+      MSSQL_USER: "${MSSQL_USER:-SA}"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in .env}"
+      AI_AGENT_ENABLE_ORCHESTRATOR: "${AI_AGENT_ENABLE_ORCHESTRATOR:-false}"
+      YANDEX_GPT_API_KEY: "${YANDEX_GPT_API_KEY:-}"
+      YANDEX_GPT_FOLDER_ID: "${YANDEX_GPT_FOLDER_ID:-}"
+      YANDEX_GPT_MODEL: "${YANDEX_GPT_MODEL:-yandexgpt/latest}"
+      YANDEX_GPT_BASE_URL: "${YANDEX_GPT_BASE_URL:-https://llm.api.cloud.yandex.net/v1}"
+    ports:
+      - "8080:8080"
+    depends_on:
+      mssql:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: backend-baltbereg
+    restart: unless-stopped
+    environment:
+      BACKEND_DATABASE_URL: "postgresql+asyncpg://${POSTGRES_USER:-backend}:${POSTGRES_PASSWORD:-backend}@postgres:5432/${POSTGRES_DB:-baltiyskiy_bereg}"
+      BACKEND_JWT_SECRET: "${BACKEND_JWT_SECRET:-change-me-in-production}"
+      BACKEND_ADMIN_LOGIN: "${BACKEND_ADMIN_LOGIN:-admin}"
+      BACKEND_ADMIN_EMAIL: "${BACKEND_ADMIN_EMAIL:-admin@example.com}"
+      BACKEND_ADMIN_PASSWORD: "${BACKEND_ADMIN_PASSWORD:-admin12345}"
+      BACKEND_AI_AGENT_BASE_URL: "http://ai-agent:8080"
+      BACKEND_RUN_MIGRATIONS_ON_STARTUP: "false"
+      BACKEND_ENABLE_DEV_SEED: "${BACKEND_ENABLE_DEV_SEED:-false}"
+      MSSQL_HOST: "mssql"
+      MSSQL_PORT: "${MSSQL_PORT:-1433}"
+      MSSQL_DATABASE: "${MSSQL_DATABASE:-service_desk_tdbb}"
+      MSSQL_USER: "${MSSQL_USER:-SA}"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in .env}"
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ai-agent:
+        condition: service_started
+      mssql:
+        condition: service_healthy
+
   mssql:
     image: mcr.microsoft.com/mssql/server:2019-CU18-ubuntu-20.04
     container_name: mssql-baltbereg
@@ -38,5 +113,6 @@ services:
       - qdrant-data:/qdrant/storage
 
 volumes:
+  postgres-data:
   mssql-data:
   qdrant-data:

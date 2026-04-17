@@ -1,0 +1,13 @@
+FROM python:3.13-slim
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir uv
+
+COPY ai-agent /app
+
+RUN uv sync
+
+EXPOSE 8080
+
+CMD ["uv", "run", "ai-agent"]

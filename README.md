@@ -108,19 +108,68 @@ with open("data/cleaned.bak", "wb") as f:
 
 1. Положите скачанный `cleaned.bak` в `data/`.
 
-2. Запустите MSSQL:
+2. Запустите инфраструктуру:
 
 ```bash
 docker compose up -d
 ```
 
-3. Дождитесь восстановления базы (~1-2 минуты). Проверьте подключение:
+3. Дождитесь восстановления MSSQL (~1-2 минуты), запуска `postgres`, `qdrant`, `ai-agent` и `backend`. Проверьте подключение к MSSQL:
 
 ```bash
 docker exec -it mssql-baltbereg /opt/mssql-tools/bin/sqlcmd \
     -S localhost -U SA -P "$MSSQL_SA_PASSWORD" \
     -Q "SELECT TOP 1 Name FROM service_desk_tdbb.dbo.Task"
 ```
+
+### Backend admin API
+
+Production backend использует `Postgres` как operational storage, читает upstream данные из MSSQL и работает рядом с internal `ai-agent` сервисом.
+
+Сервисы в `docker compose`:
+
+- `postgres` — основное хранилище backend
+- `backend` — FastAPI admin API на `http://localhost:8000`
+- `ai-agent` — internal inference/RAG сервис на `http://localhost:8080`
+- `mssql` — upstream service desk source
+- `qdrant` — vector storage для `ai-agent`
+
+Запуск:
+
+```bash
+docker compose up -d postgres mssql qdrant ai-agent backend
+```
+
+Проверка, что сервис поднялся:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/admin/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"admin12345"}'
+```
+
+Для локального запуска без Docker:
+
+```bash
+uv run python -m backend.serve
+```
+
+Backend при запуске применяет Alembic migrations и затем поднимает API.
+
+Основные переменные backend лежат в `.env.example`:
+
+- `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
+- `BACKEND_JWT_SECRET`, `BACKEND_ADMIN_LOGIN`, `BACKEND_ADMIN_EMAIL`, `BACKEND_ADMIN_PASSWORD`
+- `BACKEND_AI_AGENT_BASE_URL`
+- `BACKEND_ENABLE_DEV_SEED`
+
+Синхронизация проекций из MSSQL в Postgres:
+
+```bash
+uv run python -m backend.sync_service_desk
+```
+
+`backend` остаётся единственным владельцем `/api/v1/admin/*`, а `ai-agent` используется как internal inference endpoint для health/respond contract.
 
 ### Ключевые таблицы
 
@@ -183,51 +232,6 @@ YANDEX_OCR_FOLDER_ID=your-folder-id
 - распознает текст на изображении;
 - вставляет OCR-результат как markdown в место исходной картинки;
 - сохраняет одновременно `markdown` (чистый текст без картинок) и `markdown_with_ocr` (enriched-версия для chunking).
-
-Для долгого resumable OCR-прогона по уже готовому `articles_source` используйте отдельный runner:
-
-```bash
-./.venv/bin/python research/ocr_articles.py
-```
-
-Он:
-
-- показывает `tqdm` progress bar;
-- пишет результат батчами;
-- хранит resume-safe checkpoint в `articles_source_ocr.working.jsonl`;
-- не заставляет повторно OCR-ить уже записанные статьи после прерывания.
-
-## Эмбеддинги по чанкам
-
-Для локального подсчета векторов по `ticket_cases` и `article_chunks` добавлен отдельный runner на `Qwen/Qwen3-Embedding-0.6B`:
-
-```bash
-./.venv/bin/python research/embed_chunks.py
-```
-
-Что он делает:
-
-- по умолчанию читает `research/data_preparation/outputs/ticket_cases.jsonl.gz` и `article_chunks.jsonl.gz`;
-- на macOS автоматически выбирает `MPS`, если он доступен;
-- пишет resumable checkpoint-файлы в `research/data_preparation/outputs/embeddings/*.working.jsonl`;
-- сохраняет финальные артефакты в `research/data_preparation/outputs/embeddings/*.jsonl.gz`;
-- хранит для каждого чанка `point_id`, `vector`, `payload`, `embedding_model`, `embedding_dim`.
-
-Полезные флаги:
-
-```bash
-./.venv/bin/python research/embed_chunks.py \
-  --device mps \
-  --embed-batch-size 8 \
-  --write-batch-size 16
-```
-
-Если нужен только один корпус, можно ограничить список файлов:
-
-```bash
-./.venv/bin/python research/embed_chunks.py \
-  --chunk-files article_chunks.jsonl.gz
-```
 
 ## Формат сдачи
 
