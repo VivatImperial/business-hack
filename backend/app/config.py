@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import Annotated
+
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -15,6 +17,16 @@ class Settings(BaseSettings):
     app_name: str = "backend"
     api_v1_prefix: str = "/api/v1"
     database_url: str = "postgresql+asyncpg://backend:backend@localhost:5432/baltiyskiy_bereg"
+    cors_origins: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:4173",
+            "http://127.0.0.1:4173",
+        ]
+    )
     run_migrations_on_startup: bool = False
     enable_dev_seed: bool = False
     jwt_secret: str = "change-me-in-production"
@@ -43,3 +55,10 @@ class Settings(BaseSettings):
     )
     mssql_sync_enabled: bool = False
     mssql_sync_batch_size: int = Field(default=100, ge=1, le=5000)
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def normalize_cors_origins(cls, value: object) -> object:
+        if isinstance(value, str):
+            return [item.strip() for item in value.split(",") if item.strip()]
+        return value
