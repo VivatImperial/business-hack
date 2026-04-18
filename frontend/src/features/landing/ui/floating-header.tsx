@@ -1,7 +1,5 @@
-import { Button, buttonVariants } from "@/shared/ui/button";
-import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
-import { motion, staggerContainer, fadeIn } from "@/shared/animations/motion";
+import { motion, fadeIn, staggerContainer } from "@/shared/animations/motion";
 
 interface HeaderLink {
     label: string;
@@ -14,36 +12,20 @@ interface FloatingHeaderProps {
 
 export function FloatingHeader({ links = [] }: FloatingHeaderProps) {
     return (
-        <header
-            className={cn(
-                "sticky top-4 z-50 mx-auto mt-4 w-[calc(100%-1.5rem)] max-w-[1200px] rounded-2xl border border-blue-100 bg-white/90 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/70",
-            )}
-        >
-            <nav className="mx-auto flex items-center justify-between pl-1 pr-3 py-2">
-                {/* Logo */}
-                <motion.div
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
+        <header className="fixed top-3 z-50 w-full px-3 pt-2 md:top-5 md:pt-3">
+            <nav className="mx-auto flex h-14 w-full max-w-[1200px] items-center justify-between rounded-full border border-[var(--brand-border)]/80 bg-white/85 pl-5 pr-3 shadow-[0_4px_24px_-8px_rgba(42,31,54,0.08)] backdrop-blur-md sm:h-16 sm:pl-7 sm:pr-4">
+                <motion.a
+                    href="#hero"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     transition={{ duration: 0.3 }}
+                    className="font-heading text-[15px] font-semibold tracking-tight text-[var(--brand-dark)]"
                 >
-                    <Link
-                        to="/"
-                        className="flex items-center gap-2 rounded-xl px-2 py-1 transition hover:bg-slate-100"
-                    >
-                        <img
-                            src="/images/common/logo.webp"
-                            alt="Логотип Пульсар"
-                            className="size-7 rounded-full object-cover"
-                        />
-                        <p className="font-brand text-sm font-semibold tracking-wide sm:text-base">
-                            Пульсар
-                        </p>
-                    </Link>
-                </motion.div>
+                    Балтийский Берег
+                </motion.a>
 
-                {/* Center nav links — desktop */}
                 <motion.div
-                    className="hidden items-center gap-1 lg:flex"
+                    className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-7 md:flex"
                     variants={staggerContainer(0.05)}
                     initial="hidden"
                     animate="show"
@@ -51,49 +33,34 @@ export function FloatingHeader({ links = [] }: FloatingHeaderProps) {
                     {links.map((link) => (
                         <motion.a
                             key={link.href}
-                            className={buttonVariants({
-                                variant: "ghost",
-                                size: "lg",
-                            })}
-                            href={link.href}
                             variants={fadeIn}
+                            href={link.href}
+                            className="text-[14px] font-medium text-[var(--brand-text)] transition-colors hover:text-[var(--brand-dark)]"
                         >
                             {link.label}
                         </motion.a>
                     ))}
                 </motion.div>
 
-                {/* Right side — auth buttons (desktop) */}
                 <motion.div
-                    className="hidden items-center gap-2 lg:flex"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ duration: 0.3, delay: 0.2 }}
+                    transition={{ duration: 0.3, delay: 0.15 }}
+                    className="flex items-center gap-2"
                 >
                     <Link
                         to="/login"
-                        className={buttonVariants({
-                            variant: "ghost",
-                            size: "lg",
-                        })}
+                        className="hidden rounded-full px-3 py-1.5 text-[13px] font-medium text-[var(--brand-text)] transition-colors hover:text-[var(--brand-dark)] sm:inline-flex"
                     >
-                        Войти
+                        Вход
                     </Link>
-                    <Link to="/login">
-                        <Button size="lg" className="rounded-xl px-4">
-                            Попробовать
-                        </Button>
-                    </Link>
+                    <a
+                        href="#cta"
+                        className="inline-flex h-9 items-center justify-center rounded-full bg-[var(--brand-dark)] px-4 text-[13px] font-medium text-white transition-colors hover:bg-[var(--brand-dark-2)] sm:h-10 sm:px-5"
+                    >
+                        Открыть демо
+                    </a>
                 </motion.div>
-
-                {/* Mobile menu - removed, just show CTA */}
-                <div className="flex items-center gap-2 lg:hidden">
-                    <Link to="/login">
-                        <Button size="sm" className="rounded-xl px-4">
-                            Попробовать
-                        </Button>
-                    </Link>
-                </div>
             </nav>
         </header>
     );

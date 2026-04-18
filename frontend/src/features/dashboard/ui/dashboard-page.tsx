@@ -1,12 +1,5 @@
-import { Button } from "@/shared/ui/button";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/shared/ui/tooltip";
-import { ArrowDownTrayIcon } from "@heroicons/react/24/solid";
-import { GuideHelpButton } from "@/shared/layout/guide-help-button";
+import { useMemo } from "react";
+import { motion } from "framer-motion";
 import {
     Area,
     AreaChart,
@@ -15,471 +8,285 @@ import {
     Tooltip as RechartsTooltip,
     XAxis,
     YAxis,
-    PieChart,
-    Pie,
-    Cell,
 } from "recharts";
-import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { dashboardQueries } from "@/lib/queries/dashboard";
-import { leadsQueries } from "@/lib/queries/leads";
-import { motion, AnimatePresence } from "@/shared/animations/motion";
-import {
-    getGreeting,
-    getTagColor,
-} from "@/features/dashboard/lib/dashboard-utils";
-import { useDashboardExport } from "@/features/dashboard/lib/use-dashboard-export";
-import { PERIOD_PRESETS } from "@/lib/constants";
-import { LeadsIcon, MessagesIcon, ConversionIcon } from "./dashboard-icons";
-import { Spinner } from "@/shared/ui/spinner";
-import {
-    DashboardCard,
-    KpiCard,
-    LimitsCard,
-    FunnelStep,
-    formatCompact,
-} from "./dashboard-components";
 
-/* ── Types ── */
+import {
+    useSummaryApiV1AdminDashboardSummaryGet as useGetDashboardSummary,
+    useMessagesTimeseriesApiV1AdminDashboardMessagesTimeseriesGet as useGetMessagesTimeseries,
+} from "@/lib/api/generated/admin-dashboard/admin-dashboard";
+import type { MessagesTimeseriesResponsePeriod as Period } from "@/lib/api/generated/schemas/messagesTimeseriesResponsePeriod";
+import { Skeleton } from "@/shared/ui/skeleton";
+import { cn } from "@/lib/utils";
+import {
+    HealthIndicator,
+    StatCard,
+} from "@/features/dashboard/ui/dashboard-components";
+import { Route as DashboardRoute } from "@/routes/_app.dashboard";
 
-type DashboardData = {
-    kpi: {
-        leadsFound: { value: number; delta: number };
-        messagesProcessed: { value: number; delta: number };
-        conversionRate: { value: number; delta: number };
-        limitsUsed: { value: number; delta: number; total: number };
-    };
-    chartData: Array<{ date: string; leads: number; messages: number }>;
-    promptStats: Array<{
-        name: string;
-        leads: number;
-        conversion: number;
-        cpl: number;
-        trend: number[];
-    }>;
-    tagDistribution: Array<{ tag: string; count: number; color: string }>;
+const PERIOD_LABELS: Record<string, string> = {
+    "1h": "1ч",
+    "6h": "6ч",
+    "24h": "24ч",
+    "7d": "7д",
+    "30d": "30д",
+    "90d": "90д",
 };
 
-/* ── Main Component ── */
+const PERIOD_ORDER: Period[] = ["1h", "6h", "24h", "7d", "30d", "90d"];
 
-export function DashboardPage({ tenantId }: { tenantId: number }) {
-    const [activePeriod, setActivePeriod] = useState("7d");
-    const [hoveredTagIndex, setHoveredTagIndex] = useState<number | null>(null);
-
-    const { data: dataRaw, isFetching } = useQuery(
-        dashboardQueries.stats(tenantId, activePeriod),
+function isPeriod(value: string | undefined): value is Period {
+    return (
+        value === "1h" ||
+        value === "6h" ||
+        value === "24h" ||
+        value === "7d" ||
+        value === "30d" ||
+        value === "90d"
     );
-    const data = dataRaw as DashboardData | undefined;
+}
 
-    const { data: leadsDataPeriod } = useQuery(
-        leadsQueries.list(tenantId, {
-            pageSize: 1,
-            period: activePeriod as "today" | "7d" | "30d" | "90d" | "all",
-        }),
-    );
-    const leadsCounts = (leadsDataPeriod as { counts?: Record<string, number> })
-        ?.counts;
+function formatDuration(minutes: number): string {
+    if (minutes < 60) return `${Math.round(minutes)} мин.`;
+    const hours = minutes / 60;
+    return `${hours.toFixed(1)} ч.`;
+}
 
-    const handlePeriodChange = (period: string) => {
-        if (period !== activePeriod) setActivePeriod(period);
+function formatRate(rate: number): string {
+    return `${Math.round(rate * 100)}%`;
+}
+
+export function DashboardPage() {
+    const search = DashboardRoute.useSearch();
+    const navigate = DashboardRoute.useNavigate();
+    const period: Period = isPeriod(search.period) ? search.period : "7d";
+
+    const summaryQuery = useGetDashboardSummary({ period });
+    const tsQuery = useGetMessagesTimeseries({ period });
+
+    const summary =
+        summaryQuery.data?.status === 200 ? summaryQuery.data.data : undefined;
+    const timeseries =
+        tsQuery.data?.status === 200 ? tsQuery.data.data : undefined;
+
+    const chartData = useMemo(() => {
+        if (!timeseries) return [];
+        return timeseries.points.map((p) => ({
+            ts: p.ts,
+            messages_count: p.messages_count,
+            label: new Date(p.ts).toLocaleTimeString("ru-RU", {
+                hour: "2-digit",
+                minute: "2-digit",
+            }),
+        }));
+    }, [timeseries]);
+
+    const setPeriod = (next: Period) => {
+        navigate({ search: { period: next }, replace: true });
     };
-
-    const { handleExport, isExporting } = useDashboardExport(
-        tenantId,
-        activePeriod,
-    );
-
-    const groupedChartData = useMemo(() => {
-        if (!data?.chartData || data.chartData.length === 0) return [];
-        return data.chartData;
-    }, [data?.chartData]);
-
-    if (!data?.kpi || !data?.tagDistribution) {
-        return (
-            <div className="flex flex-col items-center justify-center py-24 text-center">
-                <img
-                    src="/images/common/empty-state-illustration.svg"
-                    alt=""
-                    className="w-40 h-40 mb-6 opacity-60"
-                />
-                <h2 className="font-heading text-[20px] font-extrabold text-foreground mb-1.5 tracking-tight">
-                    Данные загружаются
-                </h2>
-                <p className="text-[14px] text-muted-foreground leading-relaxed max-w-xs">
-                    Статистика появится после первого сканирования чатов.
-                    Убедитесь, что Telegram подключён и добавлены источники.
-                </p>
-            </div>
-        );
-    }
-
-    const limitsPercent = data.kpi?.limitsUsed?.total
-        ? Math.round(
-              (data.kpi.limitsUsed.value / data.kpi.limitsUsed.total) * 100,
-          )
-        : 0;
-
-    const statusCounts = {
-        new: (leadsCounts?.new ?? 0) + (leadsCounts?.viewed ?? 0),
-        in_progress: leadsCounts?.in_progress ?? 0,
-        rejected: leadsCounts?.rejected ?? 0,
-        favorites: leadsCounts?.favorites ?? 0,
-    };
-    const statusMax = Math.max(
-        statusCounts.new,
-        statusCounts.in_progress,
-        statusCounts.rejected,
-        statusCounts.favorites,
-        1,
-    );
 
     return (
-        <TooltipProvider>
-            <div className="relative flex flex-col gap-6">
-                {/* Loading indicator */}
-                <AnimatePresence>
-                    {isFetching && (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="absolute top-2 right-0 z-50 flex items-center gap-2 rounded-xl bg-card/95 backdrop-blur-md px-3.5 py-2 shadow-lg shadow-black/6"
-                        >
-                            <Spinner className="size-3.5 animate-spin text-foreground" />
-                            <span className="text-[13px] font-medium text-muted-foreground">
-                                Обновление...
-                            </span>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+        <div className="flex flex-col gap-8 p-6 md:p-10 max-w-[1400px] w-full mx-auto animate-fade-in-up">
+            <section className="flex flex-col gap-4">
+                <h2 className="text-sm uppercase tracking-wider text-muted-foreground font-medium">
+                    Состояние платформы
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <StatCard
+                        title="Статус"
+                        hint="Общий статус платформы"
+                        loading={summaryQuery.isLoading}
+                        value={
+                            <div className="flex items-center gap-2 capitalize">
+                                {summary && (
+                                    <HealthIndicator status={summary.health} />
+                                )}
+                                <span className="text-foreground">
+                                    {summary ? healthLabel(summary.health) : ""}
+                                </span>
+                            </div>
+                        }
+                    />
+                    <StatCard
+                        title="Обращений"
+                        hint="Кол-во открытых заявок"
+                        loading={summaryQuery.isLoading}
+                        value={summary?.open_appeals_count ?? "—"}
+                    />
+                    <StatCard
+                        title="Обращений в работе"
+                        hint="Кол-во заявок в работе"
+                        loading={summaryQuery.isLoading}
+                        value={summary?.in_progress_appeals_count ?? "—"}
+                    />
+                    <StatCard
+                        title="Доля ассистента"
+                        hint="Доля закрытых заявок ассистентом"
+                        loading={summaryQuery.isLoading}
+                        value={
+                            summary
+                                ? formatRate(summary.assistant_resolution_rate)
+                                : "—"
+                        }
+                    />
+                    <StatCard
+                        title="Время решения"
+                        hint="Ср. время решения обращений"
+                        loading={summaryQuery.isLoading}
+                        value={
+                            summary
+                                ? formatDuration(summary.avg_resolution_minutes)
+                                : "—"
+                        }
+                    />
+                    <StatCard
+                        title="CSAT"
+                        hint="Индекс удовлетворённости ответами"
+                        loading={summaryQuery.isLoading}
+                        value={
+                            summary?.csat_avg !== null &&
+                            summary?.csat_avg !== undefined
+                                ? summary.csat_avg.toFixed(1)
+                                : "—"
+                        }
+                    />
+                </div>
+            </section>
 
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <h1
-                            className="font-heading text-[26px] font-extrabold tracking-tight text-foreground"
-                            suppressHydrationWarning
-                        >
-                            {getGreeting()}
-                        </h1>
-                        <GuideHelpButton section="dashboard" />
+            <section className="rounded-2xl bg-card p-6 md:p-7 shadow-card">
+                <div className="flex items-center justify-between gap-4 flex-wrap mb-6">
+                    <div>
+                        <h3 className="text-lg font-semibold text-foreground">
+                            Обработка обращений
+                        </h3>
+                        {timeseries && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                                Всего за период: {timeseries.total_messages}
+                            </p>
+                        )}
                     </div>
-                    <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-0.5 rounded-xl bg-secondary p-1">
-                            {PERIOD_PRESETS.map((preset) => (
+                    <div className="inline-flex items-center gap-1 p-1 bg-card rounded-xl ring-1 ring-border shadow-sm relative">
+                        {PERIOD_ORDER.map((p) => {
+                            const isActive = period === p;
+                            return (
                                 <button
-                                    key={preset.value}
-                                    className="relative h-7 px-3.5 text-[13px] font-medium rounded-xl transition-colors"
-                                    onClick={() =>
-                                        handlePeriodChange(preset.value)
-                                    }
-                                    disabled={isFetching}
+                                    key={p}
+                                    type="button"
+                                    onClick={() => setPeriod(p)}
+                                    className={cn(
+                                        "relative px-3 py-1.5 rounded-lg text-sm font-medium transition-colors z-10",
+                                        isActive
+                                            ? "text-primary-foreground"
+                                            : "text-muted-foreground hover:text-foreground",
+                                    )}
                                 >
-                                    {activePeriod === preset.value && (
+                                    {isActive && (
                                         <motion.div
-                                            layoutId="period-indicator"
-                                            className="absolute inset-0 bg-card rounded-xl shadow-sm shadow-black/6"
+                                            layoutId="dashboard-period"
+                                            className="absolute inset-0 bg-primary rounded-lg -z-10"
                                             transition={{
                                                 type: "spring",
-                                                bounce: 0.15,
-                                                duration: 0.5,
+                                                bounce: 0.2,
+                                                duration: 0.6,
                                             }}
                                         />
                                     )}
-                                    <span
-                                        className={`relative z-10 transition-colors duration-200 ${
-                                            activePeriod === preset.value
-                                                ? "text-foreground"
-                                                : "text-muted-foreground hover:text-foreground"
-                                        }`}
-                                    >
-                                        {preset.label}
-                                    </span>
+                                    {PERIOD_LABELS[p]}
                                 </button>
-                            ))}
-                        </div>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="ml-2 h-7 px-3 gap-1.5 rounded-xl border-dashed text-[13px] font-medium text-muted-foreground hover:text-foreground"
-                            onClick={() => void handleExport()}
-                            disabled={isExporting}
-                        >
-                            <ArrowDownTrayIcon className="h-3.5 w-3.5" />
-                            Экспорт
-                        </Button>
+                            );
+                        })}
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                    <KpiCard
-                        title="Найдено лидов"
-                        value={data.kpi.leadsFound.value.toLocaleString(
-                            "ru-RU",
-                        )}
-                        delta={data.kpi.leadsFound.delta}
-                        icon={<LeadsIcon />}
-                    />
-                    <KpiCard
-                        title="Сообщений"
-                        value={formatCompact(data.kpi.messagesProcessed.value)}
-                        delta={data.kpi.messagesProcessed.delta}
-                        icon={<MessagesIcon />}
-                    />
-                    <KpiCard
-                        title="Конверсия"
-                        value={`${data.kpi.conversionRate.value}%`}
-                        delta={data.kpi.conversionRate.delta}
-                        icon={<ConversionIcon />}
-                    />
-                    <LimitsCard
-                        value={data.kpi.limitsUsed.value}
-                        total={data.kpi.limitsUsed.total}
-                        percent={limitsPercent}
-                        delta={data.kpi.limitsUsed.delta}
-                    />
-                </div>
-
-                {/* Bottom section: Chart left + Funnel/Tags right */}
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.2fr_1fr] lg:items-start">
-                    {/* Chart */}
-                    <DashboardCard title="Динамика поиска лидов">
-                        <div className="h-[400px] w-full min-w-0">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart
-                                    data={groupedChartData}
-                                    margin={{
-                                        top: 8,
-                                        right: 8,
-                                        left: 8,
-                                        bottom: 0,
-                                    }}
-                                >
-                                    <defs>
-                                        <linearGradient
-                                            id="colorLeads"
-                                            x1="0"
-                                            y1="0"
-                                            x2="0"
-                                            y2="1"
-                                        >
-                                            <stop
-                                                offset="0%"
-                                                stopColor="#2AABEE"
-                                                stopOpacity={0.25}
-                                            />
-                                            <stop
-                                                offset="100%"
-                                                stopColor="#2AABEE"
-                                                stopOpacity={0.02}
-                                            />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid
-                                        strokeDasharray="4 4"
-                                        vertical={false}
-                                        stroke="#e5e7eb"
-                                        strokeOpacity={0.6}
-                                    />
-                                    <XAxis
-                                        dataKey="date"
-                                        axisLine={false}
-                                        tickLine={false}
-                                        tick={{
-                                            fill: "#9ca3af",
-                                            fontSize: 11,
-                                            fontFamily: "Inter",
-                                        }}
-                                        dy={8}
-                                    />
-                                    <YAxis
-                                        axisLine={false}
-                                        tickLine={false}
-                                        tick={{
-                                            fill: "#9ca3af",
-                                            fontSize: 11,
-                                            fontFamily: "Inter",
-                                        }}
-                                        dx={-6}
-                                        width={30}
-                                    />
-                                    <RechartsTooltip
-                                        contentStyle={{
-                                            borderRadius: "12px",
-                                            border: "none",
-                                            boxShadow:
-                                                "0 8px 32px rgba(0,0,0,0.10)",
-                                            fontSize: "12px",
-                                            padding: "10px 14px",
-                                            fontFamily: "Inter",
-                                            background:
-                                                "rgba(255,255,255,0.98)",
-                                            backdropFilter: "blur(8px)",
-                                        }}
-                                        itemStyle={{
-                                            color: "#111827",
-                                            fontWeight: 500,
-                                        }}
-                                    />
-                                    <Area
-                                        type="monotone"
-                                        dataKey="leads"
-                                        name="Лиды"
-                                        stroke="#2AABEE"
-                                        strokeWidth={2}
-                                        fillOpacity={1}
-                                        fill="url(#colorLeads)"
-                                        dot={false}
-                                        activeDot={{
-                                            r: 4,
-                                            fill: "#2AABEE",
-                                            stroke: "white",
-                                            strokeWidth: 2,
-                                        }}
-                                    />
-                                </AreaChart>
-                            </ResponsiveContainer>
+                <div className="h-[320px]">
+                    {tsQuery.isLoading ? (
+                        <Skeleton className="h-full w-full rounded-xl" />
+                    ) : chartData.length === 0 ? (
+                        <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                            Нет данных за выбранный период
                         </div>
-                    </DashboardCard>
-
-                    {/* Right column: Funnel + Tags stacked */}
-                    <div className="flex flex-col gap-4">
-                        {/* Lead statuses */}
-                        <DashboardCard title="Статусы лидов">
-                            <div className="flex flex-col gap-2">
-                                <FunnelStep
-                                    label="Необработанные"
-                                    value={statusCounts.new}
-                                    max={statusMax}
-                                    color="#FF9500"
-                                />
-                                <FunnelStep
-                                    label="В процессе"
-                                    value={statusCounts.in_progress}
-                                    max={statusMax}
-                                    color="#007AFF"
-                                />
-                                <FunnelStep
-                                    label="Отклонённые"
-                                    value={statusCounts.rejected}
-                                    max={statusMax}
-                                    color="#FF3B30"
-                                />
-                                <FunnelStep
-                                    label="Избранные"
-                                    value={statusCounts.favorites}
-                                    max={statusMax}
-                                    color="#34C759"
-                                />
-                            </div>
-                        </DashboardCard>
-
-                        {/* Tags — Donut chart */}
-                        <DashboardCard title="Распределение по тегам">
-                            <div className="flex flex-col items-center gap-6 pt-2 pb-1">
-                                <div className="w-full h-[180px] shrink-0">
-                                    <ResponsiveContainer
-                                        width="100%"
-                                        height="100%"
+                    ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart
+                                data={chartData}
+                                margin={{
+                                    top: 10,
+                                    right: 20,
+                                    left: 0,
+                                    bottom: 0,
+                                }}
+                            >
+                                <defs>
+                                    <linearGradient
+                                        id="msgGradient"
+                                        x1="0"
+                                        y1="0"
+                                        x2="0"
+                                        y2="1"
                                     >
-                                        <PieChart>
-                                            <Pie
-                                                data={data.tagDistribution.map(
-                                                    (item) => ({
-                                                        name: item.tag,
-                                                        value: item.count,
-                                                    }),
-                                                )}
-                                                cx="50%"
-                                                cy="50%"
-                                                innerRadius={45}
-                                                outerRadius={75}
-                                                paddingAngle={3}
-                                                dataKey="value"
-                                                strokeWidth={0}
-                                            >
-                                                {data.tagDistribution.map(
-                                                    (_, i) => (
-                                                        <Cell
-                                                            key={`cell-${i}`}
-                                                            fill={getTagColor(
-                                                                i,
-                                                            )}
-                                                            opacity={
-                                                                hoveredTagIndex ===
-                                                                    null ||
-                                                                hoveredTagIndex ===
-                                                                    i
-                                                                    ? 1
-                                                                    : 0.3
-                                                            }
-                                                            className="transition-opacity duration-200"
-                                                        />
-                                                    ),
-                                                )}
-                                            </Pie>
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                </div>
-                                <div className="grid grid-cols-1 gap-2 w-full">
-                                    {data.tagDistribution.map((item, i) => {
-                                        const total =
-                                            data.tagDistribution.reduce(
-                                                (s, t) => s + t.count,
-                                                0,
-                                            );
-                                        const pct =
-                                            total > 0
-                                                ? Math.round(
-                                                      (item.count / total) *
-                                                          100,
-                                                  )
-                                                : 0;
-                                        return (
-                                            <div
-                                                key={item.tag}
-                                                className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-secondary/60 border border-border/50 text-[13px] transition-all cursor-default ${hoveredTagIndex === i ? "bg-secondary border-border shadow-sm scale-105" : "hover:bg-secondary/80"}`}
-                                                onMouseEnter={() =>
-                                                    setHoveredTagIndex(i)
-                                                }
-                                                onMouseLeave={() =>
-                                                    setHoveredTagIndex(null)
-                                                }
-                                            >
-                                                <div
-                                                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                                                    style={{
-                                                        backgroundColor:
-                                                            getTagColor(i),
-                                                    }}
-                                                />
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <span className="text-foreground font-medium truncate min-w-0 flex-1">
-                                                            {item.tag}
-                                                        </span>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        {item.tag}
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                                <div className="flex items-center gap-1.5 pl-1.5 border-l border-border/50">
-                                                    <span className="font-bold text-foreground tabular-nums">
-                                                        {item.count}
-                                                    </span>
-                                                    <span className="text-[11px] text-muted-foreground tabular-nums">
-                                                        {pct}%
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        </DashboardCard>
-                    </div>
+                                        <stop
+                                            offset="0%"
+                                            stopColor="#152b52"
+                                            stopOpacity={0.25}
+                                        />
+                                        <stop
+                                            offset="100%"
+                                            stopColor="#152b52"
+                                            stopOpacity={0}
+                                        />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid
+                                    strokeDasharray="3 3"
+                                    stroke="#e3e7ed"
+                                    vertical={false}
+                                />
+                                <XAxis
+                                    dataKey="label"
+                                    stroke="#9aa3b3"
+                                    fontSize={11}
+                                    tickLine={false}
+                                    axisLine={false}
+                                />
+                                <YAxis
+                                    stroke="#9aa3b3"
+                                    fontSize={11}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    width={28}
+                                />
+                                <RechartsTooltip
+                                    contentStyle={{
+                                        background: "#ffffff",
+                                        border: "1px solid #e3e7ed",
+                                        borderRadius: 8,
+                                        boxShadow:
+                                            "0 4px 12px rgba(21,43,82,0.08)",
+                                        fontSize: 12,
+                                    }}
+                                    labelStyle={{
+                                        color: "#6b7584",
+                                        marginBottom: 4,
+                                    }}
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="messages_count"
+                                    stroke="#152b52"
+                                    strokeWidth={2}
+                                    fill="url(#msgGradient)"
+                                    animationDuration={600}
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    )}
                 </div>
-            </div>
-        </TooltipProvider>
+            </section>
+        </div>
     );
+}
+
+function healthLabel(status: "healthy" | "degraded" | "down"): string {
+    if (status === "healthy") return "Healthy";
+    if (status === "degraded") return "Degraded";
+    return "Down";
 }

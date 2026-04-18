@@ -27,7 +27,15 @@ function resolveRequestUrl(url: string): string {
     if (/^https?:\/\//i.test(url)) {
         return url;
     }
-    return `${BASE_URL}${url}`;
+
+    const normalizedBase = BASE_URL.replace(/\/$/, "");
+    const normalizedUrl = url.startsWith("/") ? url : `/${url}`;
+
+    if (normalizedBase.endsWith("/api") && normalizedUrl.startsWith("/api")) {
+        return `${normalizedBase}${normalizedUrl.replace(/^\/api/, "")}`;
+    }
+
+    return `${normalizedBase}${normalizedUrl}`;
 }
 
 /**
