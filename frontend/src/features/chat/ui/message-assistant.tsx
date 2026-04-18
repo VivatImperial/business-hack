@@ -1,26 +1,37 @@
 import type { ClientRequestMessageResponse } from "@/lib/api/generated/schemas";
 import { cn } from "@/lib/utils";
 import { AssistantAvatar } from "@/shared/ui/assistant-avatar";
-import { motion, blurFadeUp } from "@/shared/animations/motion";
+import { motion } from "@/shared/animations/motion";
 
 interface MessageAssistantProps {
     message?: ClientRequestMessageResponse;
     pending?: boolean;
+    /** Index in the list, used to stagger the reveal. */
+    index?: number;
 }
 
-export function MessageAssistant({ message, pending }: MessageAssistantProps) {
+export function MessageAssistant({
+    message,
+    pending,
+    index = 0,
+}: MessageAssistantProps) {
     const isPending = pending === true || !message;
+    const delay = Math.min(index * 0.05, 0.35);
 
     return (
         <motion.div
-            variants={blurFadeUp}
-            initial="hidden"
-            animate="show"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+                duration: 0.24,
+                ease: [0.25, 0.1, 0.25, 1],
+                delay,
+            }}
             className="flex gap-3"
         >
             <AssistantAvatar size={40} pulse={isPending} />
             <div className="flex min-w-0 flex-1 flex-col gap-2">
-                <div className="whitespace-pre-wrap rounded-2xl bg-card px-4 py-3 text-[15px] leading-relaxed text-foreground shadow-card">
+                <div className="whitespace-pre-wrap rounded-2xl border border-[var(--brand-border)] bg-card px-4 py-3 text-[15px] leading-relaxed text-foreground">
                     {isPending ? (
                         <TypingDots />
                     ) : (

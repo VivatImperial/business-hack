@@ -1,13 +1,16 @@
+import { getRouteApi } from "@tanstack/react-router";
 import { useMeApiV1AdminMeGet } from "@/lib/api/generated/admin-auth/admin-auth";
 import { useMeApiV1ClientMeGet } from "@/lib/api/generated/client-auth/client-auth";
-import { getRole } from "@/lib/auth";
+
+const appRoute = getRouteApi("/_app");
 
 /**
  * Role-aware "me" hook: calls the right `/me` endpoint based on the stored
- * auth role. Returns a normalized `{ login, role, isLoading }` object.
+ * auth role. Reads role from the route context (hydration-safe) — not from
+ * cookies directly, so SSR and client agree on who the user is.
  */
 export function useMe() {
-    const role = getRole();
+    const { role } = appRoute.useRouteContext();
     const isAdmin = role === "admin";
 
     const adminQuery = useMeApiV1AdminMeGet({

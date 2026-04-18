@@ -1,4 +1,4 @@
-# Pulsar Frontend
+# Admin Frontend
 
 CRM-система для управления лидами, чатами и настройками Telegram-интеграции.
 
@@ -73,4 +73,4 @@ public/images/
 └── stories/      # Карточки сторис
 ```
 
-Ссылки на картинки — строковые константы: `"/images/common/logo.webp"`, НЕ ES-импорты.
+Ссылки на картинки — строковые константы: `"/images/common/logo.png"`, НЕ ES-импорты.

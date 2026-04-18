@@ -15,14 +15,21 @@ interface StatCardProps {
 
 export function StatCard({ title, hint, value, loading }: StatCardProps) {
     return (
-        <div className="rounded-2xl bg-card p-6 shadow-card flex flex-col gap-3 min-h-[168px]">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div
+            className={cn(
+                "flex min-h-[160px] flex-col gap-3 rounded-2xl border p-6",
+                "border-[var(--brand-border)] bg-white",
+                "hover:border-[var(--brand-sage-deep)]",
+            )}
+        >
+            <div className="flex items-center gap-1.5 text-[13px] font-medium text-[var(--brand-text-dim)]">
                 <span>{title}</span>
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button
                             type="button"
-                            className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                            className="text-[var(--brand-text-dim)]/60  hover:text-[var(--brand-text-dim)]"
+                            aria-label="Подсказка"
                         >
                             <InformationCircleIcon className="size-4" />
                         </button>
@@ -30,10 +37,14 @@ export function StatCard({ title, hint, value, loading }: StatCardProps) {
                     <TooltipContent>{hint}</TooltipContent>
                 </Tooltip>
             </div>
-            <div className="text-[32px] font-semibold text-foreground leading-tight flex-1 flex items-center">
+
+            <div className="flex flex-1 items-center text-[32px] font-semibold leading-tight tracking-tight text-[var(--brand-ink)]">
                 {loading ? <Skeleton className="h-9 w-24" /> : value}
             </div>
-            <div className="text-[13px] text-muted-foreground">{hint}</div>
+
+            <div className="text-[12px] text-[var(--brand-text-dim)]">
+                {hint}
+            </div>
         </div>
     );
 }
@@ -42,27 +53,38 @@ interface HealthIndicatorProps {
     status: HealthStatus;
 }
 
-const HEALTH_MAP: Record<HealthStatus, { color: string; pulse: boolean }> = {
-    healthy: { color: "bg-emerald-500", pulse: true },
-    degraded: { color: "bg-amber-500", pulse: false },
-    down: { color: "bg-red-500", pulse: false },
+const HEALTH_MAP: Record<
+    HealthStatus,
+    { color: string; pulse: boolean; ring: string }
+> = {
+    healthy: {
+        color: "bg-emerald-500",
+        ring: "bg-emerald-400/40",
+        pulse: true,
+    },
+    degraded: {
+        color: "bg-amber-500",
+        ring: "bg-amber-400/40",
+        pulse: false,
+    },
+    down: { color: "bg-rose-500", ring: "bg-rose-400/40", pulse: false },
 };
 
 export function HealthIndicator({ status }: HealthIndicatorProps) {
     const info = HEALTH_MAP[status];
     return (
-        <span className="relative flex size-2.5 items-center justify-center">
+        <span className="relative flex size-3 items-center justify-center">
             {info.pulse && (
                 <span
                     className={cn(
-                        "absolute inline-flex h-full w-full animate-ping rounded-full opacity-75",
-                        info.color,
+                        "absolute inline-flex h-full w-full animate-ping rounded-full",
+                        info.ring,
                     )}
                 />
             )}
             <span
                 className={cn(
-                    "relative inline-flex size-2.5 rounded-full",
+                    "relative inline-flex size-3 rounded-full shadow-[0_0_0_3px_var(--card)]",
                     info.color,
                 )}
             />

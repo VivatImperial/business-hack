@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, getRouteApi, useRouterState } from "@tanstack/react-router";
 import {
     ChartBarIcon,
     Cog6ToothIcon,
@@ -21,7 +21,8 @@ import {
 } from "@/shared/ui/sheet";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { getRole } from "@/lib/auth";
+
+const appRoute = getRouteApi("/_app");
 
 const ADMIN_NAV_ITEMS = [
     { to: "/dashboard", label: "Дашборд", icon: ChartBarIcon },
@@ -40,7 +41,8 @@ function barItemClass(isActive: boolean) {
 
 export function MobileBottomBar() {
     const pathname = useRouterState({ select: (s) => s.location.pathname });
-    const isAdmin = getRole() === "admin";
+    const { role } = appRoute.useRouteContext();
+    const isAdmin = role === "admin";
     const [sessionsOpen, setSessionsOpen] = useState(false);
 
     const requestsQuery = useListRequestsApiV1ClientRequestsGet(undefined, {

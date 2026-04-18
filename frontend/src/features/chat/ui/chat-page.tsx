@@ -6,6 +6,7 @@ import {
     useState,
 } from "react";
 import {
+    getRouteApi,
     useNavigate,
     useParams,
     Link,
@@ -26,8 +27,9 @@ import type {
     ClientRequestMessageResponse,
 } from "@/lib/api/generated/schemas";
 import { customFetch } from "@/lib/api/client";
-import { isAdmin } from "@/lib/auth";
 import { useSnackbar } from "@/hooks/use-snackbar";
+
+const appRoute = getRouteApi("/_app");
 import { ChatInput } from "@/features/chat/ui/chat-input";
 import { MessageUser } from "@/features/chat/ui/message-user";
 import { MessageAssistant } from "@/features/chat/ui/message-assistant";
@@ -143,7 +145,8 @@ function ChatConversation({ requestId }: { requestId: string }) {
     const { showError } = useSnackbar();
     const queryClient = useQueryClient();
     const [optimisticText, setOptimisticText] = useState<string | null>(null);
-    const viewerIsAdmin = isAdmin();
+    const { role } = appRoute.useRouteContext();
+    const viewerIsAdmin = role === "admin";
 
     const adminConversationQuery = useQuery({
         queryKey: getAdminAppealConversationQueryKey(requestId),
@@ -296,11 +299,15 @@ function ChatConversation({ requestId }: { requestId: string }) {
             )}
 
             <div className="flex flex-col gap-4">
-                {renderableMessages.map((m) =>
+                {renderableMessages.map((m, idx) =>
                     m.role === "user" ? (
-                        <MessageUser key={m.id} message={m} />
+                        <MessageUser key={m.id} message={m} index={idx} />
                     ) : (
-                        <MessageAssistant key={m.id} message={m} />
+                        <MessageAssistant
+                            key={m.id}
+                            message={m}
+                            index={idx}
+                        />
                     ),
                 )}
 
@@ -314,8 +321,12 @@ function ChatConversation({ requestId }: { requestId: string }) {
                                 author_login: null,
                                 created_at: new Date().toISOString(),
                             }}
+                            index={renderableMessages.length}
                         />
-                        <MessageAssistant pending />
+                        <MessageAssistant
+                            pending
+                            index={renderableMessages.length + 1}
+                        />
                     </>
                 )}
             </div>

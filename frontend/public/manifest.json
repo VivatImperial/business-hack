@@ -1,27 +1,28 @@
 {
-  "name": "Пульсар — B2B-лиды из Telegram",
-  "short_name": "Пульсар",
-  "description": "Поиск горячих B2B-запросов в Telegram-чатах через MTProto и LLM-анализ",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#0f172a",
-  "lang": "ru",
-  "icons": [
-    {
-      "src": "/favicon.ico",
-      "sizes": "16x16 32x32",
-      "type": "image/x-icon"
-    },
-    {
-      "src": "/android-chrome-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/android-chrome-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
+    "name": "Балтийский Берег — AI-ассистент сервис-деска",
+    "short_name": "Балт Берег",
+    "description": "Внутренний AI-ассистент технической поддержки «Балтийского Берега». Отвечает сотрудникам за секунды.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#f5f7fc",
+    "theme_color": "#0d2246",
+    "lang": "ru",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/favicon.ico",
+            "sizes": "16x16 32x32",
+            "type": "image/x-icon"
+        },
+        {
+            "src": "/android-chrome-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/android-chrome-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
 }

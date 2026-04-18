@@ -187,7 +187,7 @@ export function CtaSection() {
                     <div className="relative z-10 mx-auto flex max-w-[540px] flex-col items-center px-6 text-center">
                         <motion.h2
                             variants={blurFadeUp}
-                            className="font-heading text-3xl font-semibold leading-[1.05] tracking-tight text-white sm:text-4xl md:text-[48px]"
+                            className="font-heading !text-white text-3xl font-semibold leading-[1.05] tracking-tightsm:text-4xl md:text-[48px]"
                         >
                             От первого вопроса
                             <br />

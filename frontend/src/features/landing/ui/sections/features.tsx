@@ -576,6 +576,7 @@ const CARDS: FeatureCard[] = [
             "Настраивайте промпт, тон, порог уверенности, фильтрацию тем и правила эскалации — всё в одном месте.",
         ctaLabel: "К настройкам",
         href: "/login",
+
         variant: "dark",
         Illustration: AdminIllustration,
     },
@@ -604,30 +605,30 @@ function cardClasses(variant: FeatureCard["variant"]) {
         case "dark":
             return {
                 wrapper: "bg-[var(--brand-dark)] text-white",
-                title: "text-white",
-                text: "text-white/75",
+                title: "!text-white",
+                text: "!text-white/75",
                 button: "bg-white/10 text-white hover:bg-white/15 border border-white/15",
             };
         case "terracotta":
             return {
                 wrapper: "bg-[var(--brand-accent)] text-[var(--brand-dark)]",
-                title: "text-[var(--brand-dark)]",
+                title: "!text-[var(--brand-dark)]",
                 text: "text-[var(--brand-dark)]/80",
                 button: "bg-[var(--brand-dark)] text-white hover:bg-[var(--brand-dark-2)]",
             };
         case "sage":
             return {
                 wrapper: "bg-[var(--brand-sage)] text-[var(--brand-dark)]",
-                title: "text-[var(--brand-dark)]",
-                text: "text-[var(--brand-dark)]/80",
+                title: "!text-[var(--brand-dark)]",
+                text: "!text-[var(--brand-dark)]/80",
                 button: "bg-[var(--brand-dark)] text-white hover:bg-[var(--brand-dark-2)]",
             };
         case "cream":
         default:
             return {
                 wrapper: "bg-[var(--brand-cream)] text-[var(--brand-dark)]",
-                title: "text-[var(--brand-dark)]",
-                text: "text-[var(--brand-text)]",
+                title: "!text-[var(--brand-dark)]",
+                text: "!text-[var(--brand-text)]",
                 button: "bg-[var(--brand-dark)] text-white hover:bg-[var(--brand-dark-2)]",
             };
     }

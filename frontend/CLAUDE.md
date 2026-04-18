@@ -1,4 +1,4 @@
-# CLAUDE.md — Pulsar Frontend
+# CLAUDE.md — Admin Frontend
 
 ## Сборка и проверка
 
@@ -53,7 +53,7 @@ src/
 ### Картинки
 
 - Все в `public/images/<module>/` (common, landing, dashboard, guide, leads, chats, tags, stories)
-- Ссылки — строковые константы: `"/images/common/logo.webp"`, НЕ ES-импорты
+- Ссылки — строковые константы: `"/images/common/logo.png"`, НЕ ES-импорты
 - Неиспользуемые картинки удалять, не накапливать
 
 ### Импорты

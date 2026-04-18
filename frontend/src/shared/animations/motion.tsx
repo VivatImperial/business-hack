@@ -142,6 +142,33 @@ export const softFadeUp: Variants = {
     },
 };
 
+/**
+ * Fast, no-blur list-item reveal. Use in admin tables/cards.
+ */
+export const listFadeUp: Variants = {
+    hidden: { opacity: 0, y: 6 },
+    show: {
+        opacity: 1,
+        y: 0,
+        transition: {
+            duration: 0.22,
+            ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
+        },
+    },
+};
+
+/**
+ * Tiny "pop in" for single elements (badges, status pills) — 180ms.
+ */
+export const popIn: Variants = {
+    hidden: { opacity: 0, scale: 0.96 },
+    show: {
+        opacity: 1,
+        scale: 1,
+        transition: { duration: 0.18, ease: "easeOut" as const },
+    },
+};
+
 export const drawLine: Variants = {
     hidden: { pathLength: 0, opacity: 0 },
     show: {
