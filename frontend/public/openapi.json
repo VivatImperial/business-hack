@@ -1,1986 +1,1522 @@
 {
-  "openapi": "3.1.0",
-  "info": {
-    "title": "Baltiyskiy Bereg Backend API",
-    "description": "Backend API for the Baltiyskiy Bereg service-desk assistant. It exposes admin endpoints for dashboards and support operators, plus public client endpoints shared by the web flow and Telegram bot.",
-    "version": "1.0.0"
-  },
-  "paths": {
-    "/api/v1/admin/auth/login": {
-      "post": {
-        "tags": [
-          "Admin Auth"
-        ],
-        "summary": "Login to admin panel",
-        "description": "Authenticate an admin user and return a bearer token for protected endpoints.",
-        "operationId": "login_api_v1_admin_auth_login_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LoginRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TokenResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Baltiyskiy Bereg Backend API",
+        "description": "Backend API for the Baltiyskiy Bereg service-desk assistant. It exposes admin endpoints for dashboards and support operators, plus public client endpoints shared by the web flow and Telegram bot.",
+        "version": "1.0.0"
     },
-    "/api/v1/admin/me": {
-      "get": {
-        "tags": [
-          "Admin Auth"
-        ],
-        "summary": "Get current admin profile",
-        "description": "Return the authenticated admin identity resolved from the bearer token.",
-        "operationId": "me_api_v1_admin_me_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AdminMeResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/dashboard/summary": {
-      "get": {
-        "tags": [
-          "Admin Dashboard"
-        ],
-        "summary": "Get dashboard summary",
-        "description": "Return top-level health and support efficiency metrics for the selected time period.",
-        "operationId": "summary_api_v1_admin_dashboard_summary_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "period",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "default": "24h",
-              "title": "Period"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DashboardSummaryResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/dashboard/messages-timeseries": {
-      "get": {
-        "tags": [
-          "Admin Dashboard"
-        ],
-        "summary": "Get messages time series",
-        "description": "Return aggregated message activity buckets for the selected time period.",
-        "operationId": "messages_timeseries_api_v1_admin_dashboard_messages_timeseries_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "period",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "default": "24h",
-              "title": "Period"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MessagesTimeseriesResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/appeals": {
-      "get": {
-        "tags": [
-          "Admin Appeals"
-        ],
-        "summary": "List appeals",
-        "description": "Return appeals filtered by date range, scope, and status for the admin queue.",
-        "operationId": "list_appeals_api_v1_admin_appeals_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "date_from",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "date"
+    "paths": {
+        "/api/v1/admin/auth/login": {
+            "post": {
+                "tags": ["Admin Auth"],
+                "summary": "Login to admin panel",
+                "description": "Authenticate an admin user and return a bearer token for protected endpoints.",
+                "operationId": "login_api_v1_admin_auth_login_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoginRequest"
+                            }
+                        }
+                    },
+                    "required": true
                 },
-                {
-                  "type": "null"
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TokenResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
                 }
-              ],
-              "title": "Date From"
             }
-          },
-          {
-            "name": "date_to",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "date"
+        },
+        "/api/v1/admin/me": {
+            "get": {
+                "tags": ["Admin Auth"],
+                "summary": "Get current admin profile",
+                "description": "Return the authenticated admin identity resolved from the bearer token.",
+                "operationId": "me_api_v1_admin_me_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminMeResponse"
+                                }
+                            }
+                        }
+                    }
                 },
-                {
-                  "type": "null"
+                "security": [{ "HTTPBearer": [] }]
+            }
+        },
+        "/api/v1/admin/dashboard/summary": {
+            "get": {
+                "tags": ["Admin Dashboard"],
+                "summary": "Get dashboard summary",
+                "description": "Return top-level health and support efficiency metrics for the selected time period.",
+                "operationId": "summary_api_v1_admin_dashboard_summary_get",
+                "security": [{ "HTTPBearer": [] }],
+                "parameters": [
+                    {
+                        "name": "period",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "24h",
+                            "title": "Period"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DashboardSummaryResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
                 }
-              ],
-              "title": "Date To"
             }
-          },
-          {
-            "name": "scope",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "default": "all",
-              "title": "Scope"
+        },
+        "/api/v1/admin/dashboard/messages-timeseries": {
+            "get": {
+                "tags": ["Admin Dashboard"],
+                "summary": "Get messages time series",
+                "description": "Return aggregated message activity buckets for the selected time period.",
+                "operationId": "messages_timeseries_api_v1_admin_dashboard_messages_timeseries_get",
+                "security": [{ "HTTPBearer": [] }],
+                "parameters": [
+                    {
+                        "name": "period",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "24h",
+                            "title": "Period"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessagesTimeseriesResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
             }
-          },
-          {
-            "name": "status",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
+        },
+        "/api/v1/admin/appeals": {
+            "get": {
+                "tags": ["Admin Appeals"],
+                "summary": "List appeals",
+                "description": "Return appeals filtered by date range, scope, and status for the admin queue.",
+                "operationId": "list_appeals_api_v1_admin_appeals_get",
+                "security": [{ "HTTPBearer": [] }],
+                "parameters": [
+                    {
+                        "name": "date_from",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                { "type": "string", "format": "date" },
+                                { "type": "null" }
+                            ],
+                            "title": "Date From"
+                        }
+                    },
+                    {
+                        "name": "date_to",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                { "type": "string", "format": "date" },
+                                { "type": "null" }
+                            ],
+                            "title": "Date To"
+                        }
+                    },
+                    {
+                        "name": "scope",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "all",
+                            "title": "Scope"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [{ "type": "string" }, { "type": "null" }],
+                            "title": "Status"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AppealsListResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/appeals/{appeal_id}": {
+            "get": {
+                "tags": ["Admin Appeals"],
+                "summary": "Get appeal details",
+                "description": "Return a single appeal with its current status and timestamps.",
+                "operationId": "get_appeal_api_v1_admin_appeals__appeal_id__get",
+                "security": [{ "HTTPBearer": [] }],
+                "parameters": [
+                    {
+                        "name": "appeal_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string", "title": "Appeal Id" }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AppealDetailResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/appeals/{appeal_id}/take": {
+            "post": {
+                "tags": ["Admin Appeals"],
+                "summary": "Take appeal into work",
+                "description": "Assign the appeal to the current admin and move it into in-progress state.",
+                "operationId": "take_appeal_api_v1_admin_appeals__appeal_id__take_post",
+                "security": [{ "HTTPBearer": [] }],
+                "parameters": [
+                    {
+                        "name": "appeal_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string", "title": "Appeal Id" }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AppealStatusResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/appeals/{appeal_id}/close": {
+            "post": {
+                "tags": ["Admin Appeals"],
+                "summary": "Close appeal",
+                "description": "Mark the appeal as closed and return its closure timestamp.",
+                "operationId": "close_appeal_api_v1_admin_appeals__appeal_id__close_post",
+                "security": [{ "HTTPBearer": [] }],
+                "parameters": [
+                    {
+                        "name": "appeal_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string", "title": "Appeal Id" }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AppealCloseResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/appeals/{appeal_id}/rating-request": {
+            "post": {
+                "tags": ["Admin Appeals"],
+                "summary": "Send rating request",
+                "description": "Mark that the appeal customer satisfaction request has been sent.",
+                "operationId": "send_rating_request_api_v1_admin_appeals__appeal_id__rating_request_post",
+                "security": [{ "HTTPBearer": [] }],
+                "parameters": [
+                    {
+                        "name": "appeal_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string", "title": "Appeal Id" }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AppealRatingResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/settings": {
+            "get": {
+                "tags": ["Admin Settings"],
+                "summary": "Get assistant settings",
+                "description": "Return the current assistant runtime settings used by the admin panel and backend orchestration.",
+                "operationId": "get_settings_api_v1_admin_settings_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AssistantSettingsResponse"
+                                }
+                            }
+                        }
+                    }
                 },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Status"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AppealsListResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/appeals/{appeal_id}": {
-      "get": {
-        "tags": [
-          "Admin Appeals"
-        ],
-        "summary": "Get appeal details",
-        "description": "Return a single appeal with its current status and timestamps.",
-        "operationId": "get_appeal_api_v1_admin_appeals__appeal_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "appeal_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Appeal Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AppealDetailResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/appeals/{appeal_id}/take": {
-      "post": {
-        "tags": [
-          "Admin Appeals"
-        ],
-        "summary": "Take appeal into work",
-        "description": "Assign the appeal to the current admin and move it into in-progress state.",
-        "operationId": "take_appeal_api_v1_admin_appeals__appeal_id__take_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "appeal_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Appeal Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AppealStatusResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/appeals/{appeal_id}/close": {
-      "post": {
-        "tags": [
-          "Admin Appeals"
-        ],
-        "summary": "Close appeal",
-        "description": "Mark the appeal as closed and return its closure timestamp.",
-        "operationId": "close_appeal_api_v1_admin_appeals__appeal_id__close_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "appeal_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Appeal Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AppealCloseResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/appeals/{appeal_id}/rating-request": {
-      "post": {
-        "tags": [
-          "Admin Appeals"
-        ],
-        "summary": "Send rating request",
-        "description": "Mark that the appeal customer satisfaction request has been sent.",
-        "operationId": "send_rating_request_api_v1_admin_appeals__appeal_id__rating_request_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "appeal_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Appeal Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AppealRatingResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/settings": {
-      "get": {
-        "tags": [
-          "Admin Settings"
-        ],
-        "summary": "Get assistant settings",
-        "description": "Return the current assistant runtime settings used by the admin panel and backend orchestration.",
-        "operationId": "get_settings_api_v1_admin_settings_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AssistantSettingsResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      },
-      "put": {
-        "tags": [
-          "Admin Settings"
-        ],
-        "summary": "Update assistant settings",
-        "description": "Persist assistant runtime settings such as tone of voice, confidence threshold, and top-k retrieval.",
-        "operationId": "update_settings_api_v1_admin_settings_put",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AssistantSettingsUpdateRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AssistantSettingsResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/client/auth/register": {
-      "post": {
-        "tags": [
-          "Client Auth"
-        ],
-        "summary": "Register client user",
-        "description": "Create a client account for the public request flow and return a bearer token.",
-        "operationId": "register_api_v1_client_auth_register_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ClientRegisterRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClientTokenResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/client/auth/login": {
-      "post": {
-        "tags": [
-          "Client Auth"
-        ],
-        "summary": "Login client user",
-        "description": "Authenticate a client user and optionally link the current Telegram account.",
-        "operationId": "login_api_v1_client_auth_login_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ClientLoginRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClientTokenResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/client/auth/telegram/login": {
-      "post": {
-        "tags": [
-          "Client Auth"
-        ],
-        "summary": "Login client user through Telegram",
-        "description": "Issue a client JWT for a Telegram user already linked to a backend account.",
-        "operationId": "telegram_login_api_v1_client_auth_telegram_login_post",
-        "parameters": [
-          {
-            "name": "x-telegram-bot-token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
+                "security": [{ "HTTPBearer": [] }]
+            },
+            "put": {
+                "tags": ["Admin Settings"],
+                "summary": "Update assistant settings",
+                "description": "Persist assistant runtime settings such as tone of voice, confidence threshold, and top-k retrieval.",
+                "operationId": "update_settings_api_v1_admin_settings_put",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AssistantSettingsUpdateRequest"
+                            }
+                        }
+                    },
+                    "required": true
                 },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Telegram-Bot-Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TelegramLoginRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClientTokenResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/client/me": {
-      "get": {
-        "tags": [
-          "Client Auth"
-        ],
-        "summary": "Get current client profile",
-        "description": "Return the authenticated client profile resolved from the bearer token.",
-        "operationId": "me_api_v1_client_me_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClientMeResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/client/requests": {
-      "post": {
-        "tags": [
-          "Client Requests"
-        ],
-        "summary": "Create client request",
-        "description": "Create a new client request with the selected source channel.",
-        "operationId": "create_request_api_v1_client_requests_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ClientRequestCreateRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClientRequestDetailResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "Client Requests"
-        ],
-        "summary": "List client requests",
-        "description": "List requests created by the authenticated client, optionally filtered by channel.",
-        "operationId": "list_requests_api_v1_client_requests_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "channel",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "enum": [
-                    "web",
-                    "telegram"
-                  ],
-                  "type": "string"
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AssistantSettingsResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
                 },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Channel"
+                "security": [{ "HTTPBearer": [] }]
             }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClientRequestsListResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/client/requests/{request_id}": {
-      "get": {
-        "tags": [
-          "Client Requests"
-        ],
-        "summary": "Get client request details",
-        "description": "Return one authenticated client request together with its message timeline.",
-        "operationId": "get_request_api_v1_client_requests__request_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "request_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Request Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClientRequestDetailResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/client/requests/{request_id}/messages": {
-      "post": {
-        "tags": [
-          "Client Requests"
-        ],
-        "summary": "Add message to client request",
-        "description": "Append a new client message to an existing request owned by the authenticated user.",
-        "operationId": "add_message_api_v1_client_requests__request_id__messages_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "request_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Request Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ClientRequestMessageCreateRequest"
-              }
-            }
-          }
         },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClientRequestDetailResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  },
-  "components": {
-    "schemas": {
-      "AdminMeResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "login": {
-            "type": "string",
-            "title": "Login"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "login"
-        ],
-        "title": "AdminMeResponse"
-      },
-      "AppealCloseResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "status": {
-            "type": "string",
-            "const": "closed",
-            "title": "Status"
-          },
-          "closed_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Closed At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "status",
-          "closed_at"
-        ],
-        "title": "AppealCloseResponse"
-      },
-      "AppealDetailResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "employee_login": {
-            "type": "string",
-            "title": "Employee Login"
-          },
-          "scope": {
-            "type": "string",
-            "enum": [
-              "ticket",
-              "assistant"
-            ],
-            "title": "Scope"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "open",
-              "in_progress",
-              "closed"
-            ],
-            "title": "Status"
-          },
-          "priority": {
-            "type": "string",
-            "enum": [
-              "p1",
-              "p2",
-              "p3",
-              "p4"
-            ],
-            "title": "Priority"
-          },
-          "category": {
-            "type": "string",
-            "title": "Category"
-          },
-          "processing_duration_minutes": {
-            "type": "integer",
-            "title": "Processing Duration Minutes"
-          },
-          "closed_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Closed At"
-          },
-          "csat": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Csat"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "employee_login",
-          "scope",
-          "status",
-          "priority",
-          "category",
-          "processing_duration_minutes",
-          "closed_at",
-          "csat",
-          "created_at"
-        ],
-        "title": "AppealDetailResponse"
-      },
-      "AppealListItemResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "employee_login": {
-            "type": "string",
-            "title": "Employee Login"
-          },
-          "scope": {
-            "type": "string",
-            "enum": [
-              "ticket",
-              "assistant"
-            ],
-            "title": "Scope"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "open",
-              "in_progress",
-              "closed"
-            ],
-            "title": "Status"
-          },
-          "priority": {
-            "type": "string",
-            "enum": [
-              "p1",
-              "p2",
-              "p3",
-              "p4"
-            ],
-            "title": "Priority"
-          },
-          "category": {
-            "type": "string",
-            "title": "Category"
-          },
-          "processing_duration_minutes": {
-            "type": "integer",
-            "title": "Processing Duration Minutes"
-          },
-          "closed_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Closed At"
-          },
-          "csat": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Csat"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "employee_login",
-          "scope",
-          "status",
-          "priority",
-          "category",
-          "processing_duration_minutes",
-          "closed_at",
-          "csat"
-        ],
-        "title": "AppealListItemResponse"
-      },
-      "AppealRatingResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "rating_request_sent": {
-            "type": "boolean",
-            "title": "Rating Request Sent"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "rating_request_sent"
-        ],
-        "title": "AppealRatingResponse"
-      },
-      "AppealStatusResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "status": {
-            "type": "string",
-            "const": "in_progress",
-            "title": "Status"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "status"
-        ],
-        "title": "AppealStatusResponse"
-      },
-      "AppealsListResponse": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/AppealListItemResponse"
-            },
-            "type": "array",
-            "title": "Items"
-          }
-        },
-        "type": "object",
-        "required": [
-          "items"
-        ],
-        "title": "AppealsListResponse"
-      },
-      "AssistantSettingsResponse": {
-        "properties": {
-          "tone_of_voice": {
-            "type": "string",
-            "title": "Tone Of Voice"
-          },
-          "confidence_threshold": {
-            "type": "number",
-            "title": "Confidence Threshold"
-          },
-          "top_k": {
-            "type": "integer",
-            "title": "Top K"
-          },
-          "use_articles": {
-            "type": "boolean",
-            "title": "Use Articles"
-          }
-        },
-        "type": "object",
-        "required": [
-          "tone_of_voice",
-          "confidence_threshold",
-          "top_k",
-          "use_articles"
-        ],
-        "title": "AssistantSettingsResponse"
-      },
-      "AssistantSettingsUpdateRequest": {
-        "properties": {
-          "tone_of_voice": {
-            "type": "string",
-            "minLength": 1,
-            "title": "Tone Of Voice"
-          },
-          "confidence_threshold": {
-            "type": "number",
-            "maximum": 1.0,
-            "minimum": 0.0,
-            "title": "Confidence Threshold"
-          },
-          "top_k": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Top K"
-          },
-          "use_articles": {
-            "type": "boolean",
-            "title": "Use Articles"
-          }
-        },
-        "type": "object",
-        "required": [
-          "tone_of_voice",
-          "confidence_threshold",
-          "top_k",
-          "use_articles"
-        ],
-        "title": "AssistantSettingsUpdateRequest"
-      },
-      "ClientLoginRequest": {
-        "properties": {
-          "email": {
-            "type": "string",
-            "format": "email",
-            "title": "Email"
-          },
-          "password": {
-            "type": "string",
-            "minLength": 8,
-            "title": "Password"
-          },
-          "telegram_user_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Telegram User Id"
-          },
-          "telegram_username": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Telegram Username"
-          }
-        },
-        "type": "object",
-        "required": [
-          "email",
-          "password"
-        ],
-        "title": "ClientLoginRequest"
-      },
-      "ClientMeResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "login": {
-            "type": "string",
-            "title": "Login"
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "title": "Email"
-          },
-          "telegram_user_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Telegram User Id"
-          },
-          "telegram_username": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Telegram Username"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "login",
-          "email",
-          "telegram_user_id",
-          "telegram_username"
-        ],
-        "title": "ClientMeResponse"
-      },
-      "ClientRegisterRequest": {
-        "properties": {
-          "email": {
-            "type": "string",
-            "format": "email",
-            "title": "Email"
-          },
-          "password": {
-            "type": "string",
-            "minLength": 8,
-            "title": "Password"
-          },
-          "telegram_user_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Telegram User Id"
-          },
-          "telegram_username": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Telegram Username"
-          },
-          "login": {
-            "type": "string",
-            "maxLength": 64,
-            "minLength": 3,
-            "title": "Login"
-          }
-        },
-        "type": "object",
-        "required": [
-          "email",
-          "password",
-          "login"
-        ],
-        "title": "ClientRegisterRequest"
-      },
-      "ClientRequestCreateRequest": {
-        "properties": {
-          "title": {
-            "type": "string",
-            "maxLength": 255,
-            "minLength": 1,
-            "title": "Title"
-          },
-          "description": {
-            "type": "string",
-            "minLength": 1,
-            "title": "Description"
-          },
-          "category": {
-            "type": "string",
-            "maxLength": 255,
-            "minLength": 1,
-            "title": "Category",
-            "default": "general"
-          },
-          "priority": {
-            "type": "string",
-            "enum": [
-              "p1",
-              "p2",
-              "p3",
-              "p4"
-            ],
-            "title": "Priority",
-            "default": "p3"
-          },
-          "channel": {
-            "type": "string",
-            "enum": [
-              "web",
-              "telegram"
-            ],
-            "title": "Channel",
-            "default": "web"
-          }
-        },
-        "type": "object",
-        "required": [
-          "title",
-          "description"
-        ],
-        "title": "ClientRequestCreateRequest"
-      },
-      "ClientRequestDetailResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Title"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "open",
-              "in_progress",
-              "closed"
-            ],
-            "title": "Status"
-          },
-          "priority": {
-            "type": "string",
-            "enum": [
-              "p1",
-              "p2",
-              "p3",
-              "p4"
-            ],
-            "title": "Priority"
-          },
-          "category": {
-            "type": "string",
-            "title": "Category"
-          },
-          "channel": {
-            "type": "string",
-            "enum": [
-              "web",
-              "telegram"
-            ],
-            "title": "Channel"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Updated At"
-          },
-          "closed_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Closed At"
-          },
-          "messages": {
-            "items": {
-              "$ref": "#/components/schemas/ClientRequestMessageResponse"
-            },
-            "type": "array",
-            "title": "Messages"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "title",
-          "description",
-          "status",
-          "priority",
-          "category",
-          "channel",
-          "created_at",
-          "updated_at",
-          "closed_at",
-          "messages"
-        ],
-        "title": "ClientRequestDetailResponse"
-      },
-      "ClientRequestListItemResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Title"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "open",
-              "in_progress",
-              "closed"
-            ],
-            "title": "Status"
-          },
-          "priority": {
-            "type": "string",
-            "enum": [
-              "p1",
-              "p2",
-              "p3",
-              "p4"
-            ],
-            "title": "Priority"
-          },
-          "category": {
-            "type": "string",
-            "title": "Category"
-          },
-          "channel": {
-            "type": "string",
-            "enum": [
-              "web",
-              "telegram"
-            ],
-            "title": "Channel"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Updated At"
-          },
-          "closed_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Closed At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "title",
-          "description",
-          "status",
-          "priority",
-          "category",
-          "channel",
-          "created_at",
-          "updated_at",
-          "closed_at"
-        ],
-        "title": "ClientRequestListItemResponse"
-      },
-      "ClientRequestMessageCreateRequest": {
-        "properties": {
-          "text": {
-            "type": "string",
-            "minLength": 1,
-            "title": "Text"
-          },
-          "source_message_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 128
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Source Message Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "text"
-        ],
-        "title": "ClientRequestMessageCreateRequest"
-      },
-      "ClientRequestMessageResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "author_login": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Author Login"
-          },
-          "text": {
-            "type": "string",
-            "title": "Text"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "role",
-          "author_login",
-          "text",
-          "created_at"
-        ],
-        "title": "ClientRequestMessageResponse"
-      },
-      "ClientRequestsListResponse": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/ClientRequestListItemResponse"
-            },
-            "type": "array",
-            "title": "Items"
-          }
-        },
-        "type": "object",
-        "required": [
-          "items"
-        ],
-        "title": "ClientRequestsListResponse"
-      },
-      "ClientTokenResponse": {
-        "properties": {
-          "access_token": {
-            "type": "string",
-            "title": "Access Token"
-          }
-        },
-        "type": "object",
-        "required": [
-          "access_token"
-        ],
-        "title": "ClientTokenResponse"
-      },
-      "DashboardSummaryResponse": {
-        "properties": {
-          "health": {
-            "type": "string",
-            "enum": [
-              "healthy",
-              "degraded",
-              "down"
-            ],
-            "title": "Health"
-          },
-          "open_appeals_count": {
-            "type": "integer",
-            "title": "Open Appeals Count"
-          },
-          "in_progress_appeals_count": {
-            "type": "integer",
-            "title": "In Progress Appeals Count"
-          },
-          "assistant_resolution_rate": {
-            "type": "number",
-            "title": "Assistant Resolution Rate"
-          },
-          "avg_resolution_minutes": {
-            "type": "number",
-            "title": "Avg Resolution Minutes"
-          },
-          "csat_avg": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Csat Avg"
-          }
-        },
-        "type": "object",
-        "required": [
-          "health",
-          "open_appeals_count",
-          "in_progress_appeals_count",
-          "assistant_resolution_rate",
-          "avg_resolution_minutes",
-          "csat_avg"
-        ],
-        "title": "DashboardSummaryResponse"
-      },
-      "HTTPValidationError": {
-        "properties": {
-          "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            },
-            "type": "array",
-            "title": "Detail"
-          }
-        },
-        "type": "object",
-        "title": "HTTPValidationError"
-      },
-      "LoginRequest": {
-        "properties": {
-          "email": {
-            "type": "string",
-            "format": "email",
-            "title": "Email"
-          },
-          "password": {
-            "type": "string",
-            "minLength": 1,
-            "title": "Password"
-          }
-        },
-        "type": "object",
-        "required": [
-          "email",
-          "password"
-        ],
-        "title": "LoginRequest"
-      },
-      "MessagesTimeseriesPoint": {
-        "properties": {
-          "ts": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Ts"
-          },
-          "messages_count": {
-            "type": "integer",
-            "title": "Messages Count"
-          }
-        },
-        "type": "object",
-        "required": [
-          "ts",
-          "messages_count"
-        ],
-        "title": "MessagesTimeseriesPoint"
-      },
-      "MessagesTimeseriesResponse": {
-        "properties": {
-          "period": {
-            "type": "string",
-            "enum": [
-              "1h",
-              "6h",
-              "24h",
-              "7d",
-              "30d",
-              "90d"
-            ],
-            "title": "Period"
-          },
-          "total_messages": {
-            "type": "integer",
-            "title": "Total Messages"
-          },
-          "points": {
-            "items": {
-              "$ref": "#/components/schemas/MessagesTimeseriesPoint"
-            },
-            "type": "array",
-            "title": "Points"
-          }
-        },
-        "type": "object",
-        "required": [
-          "period",
-          "total_messages",
-          "points"
-        ],
-        "title": "MessagesTimeseriesResponse"
-      },
-      "TelegramLoginRequest": {
-        "properties": {
-          "telegram_user_id": {
-            "type": "string",
-            "maxLength": 64,
-            "minLength": 1,
-            "title": "Telegram User Id"
-          },
-          "telegram_username": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Telegram Username"
-          }
-        },
-        "type": "object",
-        "required": [
-          "telegram_user_id"
-        ],
-        "title": "TelegramLoginRequest"
-      },
-      "TokenResponse": {
-        "properties": {
-          "access_token": {
-            "type": "string",
-            "title": "Access Token"
-          }
-        },
-        "type": "object",
-        "required": [
-          "access_token"
-        ],
-        "title": "TokenResponse"
-      },
-      "ValidationError": {
-        "properties": {
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
+        "/api/v1/client/auth/register": {
+            "post": {
+                "tags": ["Client Auth"],
+                "summary": "Register client user",
+                "description": "Create a client account for the public request flow and return a bearer token.",
+                "operationId": "register_api_v1_client_auth_register_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ClientRegisterRequest"
+                            }
+                        }
+                    },
+                    "required": true
                 },
-                {
-                  "type": "integer"
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ClientTokenResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
                 }
-              ]
-            },
-            "type": "array",
-            "title": "Location"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Message"
-          },
-          "type": {
-            "type": "string",
-            "title": "Error Type"
-          },
-          "input": {
-            "title": "Input"
-          },
-          "ctx": {
-            "type": "object",
-            "title": "Context"
-          }
+            }
         },
-        "type": "object",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "title": "ValidationError"
-      }
+        "/api/v1/client/auth/login": {
+            "post": {
+                "tags": ["Client Auth"],
+                "summary": "Login client user",
+                "description": "Authenticate a client user and optionally link the current Telegram account.",
+                "operationId": "login_api_v1_client_auth_login_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ClientLoginRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ClientTokenResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/client/auth/telegram/login": {
+            "post": {
+                "tags": ["Client Auth"],
+                "summary": "Login client user through Telegram",
+                "description": "Issue a client JWT for a Telegram user already linked to a backend account.",
+                "operationId": "telegram_login_api_v1_client_auth_telegram_login_post",
+                "parameters": [
+                    {
+                        "name": "x-telegram-bot-token",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [{ "type": "string" }, { "type": "null" }],
+                            "title": "X-Telegram-Bot-Token"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TelegramLoginRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ClientTokenResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/client/me": {
+            "get": {
+                "tags": ["Client Auth"],
+                "summary": "Get current client profile",
+                "description": "Return the authenticated client profile resolved from the bearer token.",
+                "operationId": "me_api_v1_client_me_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ClientMeResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [{ "HTTPBearer": [] }]
+            }
+        },
+        "/api/v1/client/requests": {
+            "post": {
+                "tags": ["Client Requests"],
+                "summary": "Create client request",
+                "description": "Create a new client request with the selected source channel.",
+                "operationId": "create_request_api_v1_client_requests_post",
+                "security": [{ "HTTPBearer": [] }],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ClientRequestCreateRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ClientRequestDetailResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "tags": ["Client Requests"],
+                "summary": "List client requests",
+                "description": "List requests created by the authenticated client, optionally filtered by channel.",
+                "operationId": "list_requests_api_v1_client_requests_get",
+                "security": [{ "HTTPBearer": [] }],
+                "parameters": [
+                    {
+                        "name": "channel",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "enum": ["web", "telegram"],
+                                    "type": "string"
+                                },
+                                { "type": "null" }
+                            ],
+                            "title": "Channel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ClientRequestsListResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/client/requests/{request_id}": {
+            "get": {
+                "tags": ["Client Requests"],
+                "summary": "Get client request details",
+                "description": "Return one authenticated client request together with its message timeline.",
+                "operationId": "get_request_api_v1_client_requests__request_id__get",
+                "security": [{ "HTTPBearer": [] }],
+                "parameters": [
+                    {
+                        "name": "request_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string", "title": "Request Id" }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ClientRequestDetailResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/client/requests/{request_id}/messages": {
+            "post": {
+                "tags": ["Client Requests"],
+                "summary": "Add message to client request",
+                "description": "Append a new client message to an existing request owned by the authenticated user.",
+                "operationId": "add_message_api_v1_client_requests__request_id__messages_post",
+                "security": [{ "HTTPBearer": [] }],
+                "parameters": [
+                    {
+                        "name": "request_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string", "title": "Request Id" }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ClientRequestMessageCreateRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ClientRequestDetailResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     },
-    "securitySchemes": {
-      "HTTPBearer": {
-        "type": "http",
-        "scheme": "bearer"
-      }
-    }
-  },
-  "tags": [
-    {
-      "name": "Admin Auth",
-      "description": "Authentication endpoints for the admin panel."
+    "components": {
+        "schemas": {
+            "AdminMeResponse": {
+                "properties": {
+                    "id": { "type": "string", "title": "Id" },
+                    "login": { "type": "string", "title": "Login" }
+                },
+                "type": "object",
+                "required": ["id", "login"],
+                "title": "AdminMeResponse"
+            },
+            "AppealCloseResponse": {
+                "properties": {
+                    "id": { "type": "string", "title": "Id" },
+                    "status": {
+                        "type": "string",
+                        "const": "closed",
+                        "title": "Status"
+                    },
+                    "closed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Closed At"
+                    }
+                },
+                "type": "object",
+                "required": ["id", "status", "closed_at"],
+                "title": "AppealCloseResponse"
+            },
+            "AppealDetailResponse": {
+                "properties": {
+                    "id": { "type": "string", "title": "Id" },
+                    "employee_login": {
+                        "type": "string",
+                        "title": "Employee Login"
+                    },
+                    "scope": {
+                        "type": "string",
+                        "enum": ["ticket", "assistant"],
+                        "title": "Scope"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": ["open", "in_progress", "closed"],
+                        "title": "Status"
+                    },
+                    "priority": {
+                        "type": "string",
+                        "enum": ["p1", "p2", "p3", "p4"],
+                        "title": "Priority"
+                    },
+                    "category": { "type": "string", "title": "Category" },
+                    "processing_duration_minutes": {
+                        "type": "integer",
+                        "title": "Processing Duration Minutes"
+                    },
+                    "closed_at": {
+                        "anyOf": [
+                            { "type": "string", "format": "date-time" },
+                            { "type": "null" }
+                        ],
+                        "title": "Closed At"
+                    },
+                    "csat": {
+                        "anyOf": [{ "type": "number" }, { "type": "null" }],
+                        "title": "Csat"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "employee_login",
+                    "scope",
+                    "status",
+                    "priority",
+                    "category",
+                    "processing_duration_minutes",
+                    "closed_at",
+                    "csat",
+                    "created_at"
+                ],
+                "title": "AppealDetailResponse"
+            },
+            "AppealListItemResponse": {
+                "properties": {
+                    "id": { "type": "string", "title": "Id" },
+                    "employee_login": {
+                        "type": "string",
+                        "title": "Employee Login"
+                    },
+                    "scope": {
+                        "type": "string",
+                        "enum": ["ticket", "assistant"],
+                        "title": "Scope"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": ["open", "in_progress", "closed"],
+                        "title": "Status"
+                    },
+                    "priority": {
+                        "type": "string",
+                        "enum": ["p1", "p2", "p3", "p4"],
+                        "title": "Priority"
+                    },
+                    "category": { "type": "string", "title": "Category" },
+                    "processing_duration_minutes": {
+                        "type": "integer",
+                        "title": "Processing Duration Minutes"
+                    },
+                    "closed_at": {
+                        "anyOf": [
+                            { "type": "string", "format": "date-time" },
+                            { "type": "null" }
+                        ],
+                        "title": "Closed At"
+                    },
+                    "csat": {
+                        "anyOf": [{ "type": "number" }, { "type": "null" }],
+                        "title": "Csat"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "employee_login",
+                    "scope",
+                    "status",
+                    "priority",
+                    "category",
+                    "processing_duration_minutes",
+                    "closed_at",
+                    "csat"
+                ],
+                "title": "AppealListItemResponse"
+            },
+            "AppealRatingResponse": {
+                "properties": {
+                    "id": { "type": "string", "title": "Id" },
+                    "rating_request_sent": {
+                        "type": "boolean",
+                        "title": "Rating Request Sent"
+                    }
+                },
+                "type": "object",
+                "required": ["id", "rating_request_sent"],
+                "title": "AppealRatingResponse"
+            },
+            "AppealStatusResponse": {
+                "properties": {
+                    "id": { "type": "string", "title": "Id" },
+                    "status": {
+                        "type": "string",
+                        "const": "in_progress",
+                        "title": "Status"
+                    }
+                },
+                "type": "object",
+                "required": ["id", "status"],
+                "title": "AppealStatusResponse"
+            },
+            "AppealsListResponse": {
+                "properties": {
+                    "items": {
+                        "items": {
+                            "$ref": "#/components/schemas/AppealListItemResponse"
+                        },
+                        "type": "array",
+                        "title": "Items"
+                    }
+                },
+                "type": "object",
+                "required": ["items"],
+                "title": "AppealsListResponse"
+            },
+            "AssistantSettingsResponse": {
+                "properties": {
+                    "tone_of_voice": {
+                        "type": "string",
+                        "title": "Tone Of Voice"
+                    },
+                    "confidence_threshold": {
+                        "type": "number",
+                        "title": "Confidence Threshold"
+                    },
+                    "top_k": { "type": "integer", "title": "Top K" },
+                    "use_articles": {
+                        "type": "boolean",
+                        "title": "Use Articles"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "tone_of_voice",
+                    "confidence_threshold",
+                    "top_k",
+                    "use_articles"
+                ],
+                "title": "AssistantSettingsResponse"
+            },
+            "AssistantSettingsUpdateRequest": {
+                "properties": {
+                    "tone_of_voice": {
+                        "type": "string",
+                        "minLength": 1,
+                        "title": "Tone Of Voice"
+                    },
+                    "confidence_threshold": {
+                        "type": "number",
+                        "maximum": 1.0,
+                        "minimum": 0.0,
+                        "title": "Confidence Threshold"
+                    },
+                    "top_k": {
+                        "type": "integer",
+                        "minimum": 1.0,
+                        "title": "Top K"
+                    },
+                    "use_articles": {
+                        "type": "boolean",
+                        "title": "Use Articles"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "tone_of_voice",
+                    "confidence_threshold",
+                    "top_k",
+                    "use_articles"
+                ],
+                "title": "AssistantSettingsUpdateRequest"
+            },
+            "ClientLoginRequest": {
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "title": "Email"
+                    },
+                    "password": {
+                        "type": "string",
+                        "minLength": 8,
+                        "title": "Password"
+                    },
+                    "telegram_user_id": {
+                        "anyOf": [{ "type": "string" }, { "type": "null" }],
+                        "title": "Telegram User Id"
+                    },
+                    "telegram_username": {
+                        "anyOf": [{ "type": "string" }, { "type": "null" }],
+                        "title": "Telegram Username"
+                    }
+                },
+                "type": "object",
+                "required": ["email", "password"],
+                "title": "ClientLoginRequest"
+            },
+            "ClientMeResponse": {
+                "properties": {
+                    "id": { "type": "string", "title": "Id" },
+                    "login": { "type": "string", "title": "Login" },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "title": "Email"
+                    },
+                    "telegram_user_id": {
+                        "anyOf": [{ "type": "string" }, { "type": "null" }],
+                        "title": "Telegram User Id"
+                    },
+                    "telegram_username": {
+                        "anyOf": [{ "type": "string" }, { "type": "null" }],
+                        "title": "Telegram Username"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "login",
+                    "email",
+                    "telegram_user_id",
+                    "telegram_username"
+                ],
+                "title": "ClientMeResponse"
+            },
+            "ClientRegisterRequest": {
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "title": "Email"
+                    },
+                    "password": {
+                        "type": "string",
+                        "minLength": 8,
+                        "title": "Password"
+                    },
+                    "telegram_user_id": {
+                        "anyOf": [{ "type": "string" }, { "type": "null" }],
+                        "title": "Telegram User Id"
+                    },
+                    "telegram_username": {
+                        "anyOf": [{ "type": "string" }, { "type": "null" }],
+                        "title": "Telegram Username"
+                    },
+                    "login": {
+                        "type": "string",
+                        "maxLength": 64,
+                        "minLength": 3,
+                        "title": "Login"
+                    }
+                },
+                "type": "object",
+                "required": ["email", "password", "login"],
+                "title": "ClientRegisterRequest"
+            },
+            "ClientRequestCreateRequest": {
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "minLength": 1,
+                        "title": "Title"
+                    },
+                    "description": {
+                        "type": "string",
+                        "minLength": 1,
+                        "title": "Description"
+                    },
+                    "category": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "minLength": 1,
+                        "title": "Category",
+                        "default": "general"
+                    },
+                    "priority": {
+                        "type": "string",
+                        "enum": ["p1", "p2", "p3", "p4"],
+                        "title": "Priority",
+                        "default": "p3"
+                    },
+                    "channel": {
+                        "type": "string",
+                        "enum": ["web", "telegram"],
+                        "title": "Channel",
+                        "default": "web"
+                    }
+                },
+                "type": "object",
+                "required": ["title", "description"],
+                "title": "ClientRequestCreateRequest"
+            },
+            "ClientRequestDetailResponse": {
+                "properties": {
+                    "id": { "type": "string", "title": "Id" },
+                    "title": {
+                        "anyOf": [{ "type": "string" }, { "type": "null" }],
+                        "title": "Title"
+                    },
+                    "description": {
+                        "anyOf": [{ "type": "string" }, { "type": "null" }],
+                        "title": "Description"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": ["open", "in_progress", "closed"],
+                        "title": "Status"
+                    },
+                    "priority": {
+                        "type": "string",
+                        "enum": ["p1", "p2", "p3", "p4"],
+                        "title": "Priority"
+                    },
+                    "category": { "type": "string", "title": "Category" },
+                    "channel": {
+                        "type": "string",
+                        "enum": ["web", "telegram"],
+                        "title": "Channel"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Updated At"
+                    },
+                    "closed_at": {
+                        "anyOf": [
+                            { "type": "string", "format": "date-time" },
+                            { "type": "null" }
+                        ],
+                        "title": "Closed At"
+                    },
+                    "messages": {
+                        "items": {
+                            "$ref": "#/components/schemas/ClientRequestMessageResponse"
+                        },
+                        "type": "array",
+                        "title": "Messages"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "title",
+                    "description",
+                    "status",
+                    "priority",
+                    "category",
+                    "channel",
+                    "created_at",
+                    "updated_at",
+                    "closed_at",
+                    "messages"
+                ],
+                "title": "ClientRequestDetailResponse"
+            },
+            "ClientRequestListItemResponse": {
+                "properties": {
+                    "id": { "type": "string", "title": "Id" },
+                    "title": {
+                        "anyOf": [{ "type": "string" }, { "type": "null" }],
+                        "title": "Title"
+                    },
+                    "description": {
+                        "anyOf": [{ "type": "string" }, { "type": "null" }],
+                        "title": "Description"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": ["open", "in_progress", "closed"],
+                        "title": "Status"
+                    },
+                    "priority": {
+                        "type": "string",
+                        "enum": ["p1", "p2", "p3", "p4"],
+                        "title": "Priority"
+                    },
+                    "category": { "type": "string", "title": "Category" },
+                    "channel": {
+                        "type": "string",
+                        "enum": ["web", "telegram"],
+                        "title": "Channel"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Updated At"
+                    },
+                    "closed_at": {
+                        "anyOf": [
+                            { "type": "string", "format": "date-time" },
+                            { "type": "null" }
+                        ],
+                        "title": "Closed At"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "title",
+                    "description",
+                    "status",
+                    "priority",
+                    "category",
+                    "channel",
+                    "created_at",
+                    "updated_at",
+                    "closed_at"
+                ],
+                "title": "ClientRequestListItemResponse"
+            },
+            "ClientRequestMessageCreateRequest": {
+                "properties": {
+                    "text": {
+                        "type": "string",
+                        "minLength": 1,
+                        "title": "Text"
+                    },
+                    "source_message_id": {
+                        "anyOf": [
+                            { "type": "string", "maxLength": 128 },
+                            { "type": "null" }
+                        ],
+                        "title": "Source Message Id"
+                    }
+                },
+                "type": "object",
+                "required": ["text"],
+                "title": "ClientRequestMessageCreateRequest"
+            },
+            "ClientRequestMessageResponse": {
+                "properties": {
+                    "id": { "type": "string", "title": "Id" },
+                    "role": { "type": "string", "title": "Role" },
+                    "author_login": {
+                        "anyOf": [{ "type": "string" }, { "type": "null" }],
+                        "title": "Author Login"
+                    },
+                    "text": { "type": "string", "title": "Text" },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "role",
+                    "author_login",
+                    "text",
+                    "created_at"
+                ],
+                "title": "ClientRequestMessageResponse"
+            },
+            "ClientRequestsListResponse": {
+                "properties": {
+                    "items": {
+                        "items": {
+                            "$ref": "#/components/schemas/ClientRequestListItemResponse"
+                        },
+                        "type": "array",
+                        "title": "Items"
+                    }
+                },
+                "type": "object",
+                "required": ["items"],
+                "title": "ClientRequestsListResponse"
+            },
+            "ClientTokenResponse": {
+                "properties": {
+                    "access_token": {
+                        "type": "string",
+                        "title": "Access Token"
+                    }
+                },
+                "type": "object",
+                "required": ["access_token"],
+                "title": "ClientTokenResponse"
+            },
+            "DashboardSummaryResponse": {
+                "properties": {
+                    "health": {
+                        "type": "string",
+                        "enum": ["healthy", "degraded", "down"],
+                        "title": "Health"
+                    },
+                    "open_appeals_count": {
+                        "type": "integer",
+                        "title": "Open Appeals Count"
+                    },
+                    "in_progress_appeals_count": {
+                        "type": "integer",
+                        "title": "In Progress Appeals Count"
+                    },
+                    "assistant_resolution_rate": {
+                        "type": "number",
+                        "title": "Assistant Resolution Rate"
+                    },
+                    "avg_resolution_minutes": {
+                        "type": "number",
+                        "title": "Avg Resolution Minutes"
+                    },
+                    "csat_avg": {
+                        "anyOf": [{ "type": "number" }, { "type": "null" }],
+                        "title": "Csat Avg"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "health",
+                    "open_appeals_count",
+                    "in_progress_appeals_count",
+                    "assistant_resolution_rate",
+                    "avg_resolution_minutes",
+                    "csat_avg"
+                ],
+                "title": "DashboardSummaryResponse"
+            },
+            "HTTPValidationError": {
+                "properties": {
+                    "detail": {
+                        "items": {
+                            "$ref": "#/components/schemas/ValidationError"
+                        },
+                        "type": "array",
+                        "title": "Detail"
+                    }
+                },
+                "type": "object",
+                "title": "HTTPValidationError"
+            },
+            "LoginRequest": {
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "title": "Email"
+                    },
+                    "password": {
+                        "type": "string",
+                        "minLength": 1,
+                        "title": "Password"
+                    }
+                },
+                "type": "object",
+                "required": ["email", "password"],
+                "title": "LoginRequest"
+            },
+            "MessagesTimeseriesPoint": {
+                "properties": {
+                    "ts": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Ts"
+                    },
+                    "messages_count": {
+                        "type": "integer",
+                        "title": "Messages Count"
+                    }
+                },
+                "type": "object",
+                "required": ["ts", "messages_count"],
+                "title": "MessagesTimeseriesPoint"
+            },
+            "MessagesTimeseriesResponse": {
+                "properties": {
+                    "period": {
+                        "type": "string",
+                        "enum": ["1h", "6h", "24h", "7d", "30d", "90d"],
+                        "title": "Period"
+                    },
+                    "total_messages": {
+                        "type": "integer",
+                        "title": "Total Messages"
+                    },
+                    "points": {
+                        "items": {
+                            "$ref": "#/components/schemas/MessagesTimeseriesPoint"
+                        },
+                        "type": "array",
+                        "title": "Points"
+                    }
+                },
+                "type": "object",
+                "required": ["period", "total_messages", "points"],
+                "title": "MessagesTimeseriesResponse"
+            },
+            "TelegramLoginRequest": {
+                "properties": {
+                    "telegram_user_id": {
+                        "type": "string",
+                        "maxLength": 64,
+                        "minLength": 1,
+                        "title": "Telegram User Id"
+                    },
+                    "telegram_username": {
+                        "anyOf": [
+                            { "type": "string", "maxLength": 255 },
+                            { "type": "null" }
+                        ],
+                        "title": "Telegram Username"
+                    }
+                },
+                "type": "object",
+                "required": ["telegram_user_id"],
+                "title": "TelegramLoginRequest"
+            },
+            "TokenResponse": {
+                "properties": {
+                    "access_token": {
+                        "type": "string",
+                        "title": "Access Token"
+                    }
+                },
+                "type": "object",
+                "required": ["access_token"],
+                "title": "TokenResponse"
+            },
+            "ValidationError": {
+                "properties": {
+                    "loc": {
+                        "items": {
+                            "anyOf": [
+                                { "type": "string" },
+                                { "type": "integer" }
+                            ]
+                        },
+                        "type": "array",
+                        "title": "Location"
+                    },
+                    "msg": { "type": "string", "title": "Message" },
+                    "type": { "type": "string", "title": "Error Type" },
+                    "input": { "title": "Input" },
+                    "ctx": { "type": "object", "title": "Context" }
+                },
+                "type": "object",
+                "required": ["loc", "msg", "type"],
+                "title": "ValidationError"
+            }
+        },
+        "securitySchemes": {
+            "HTTPBearer": { "type": "http", "scheme": "bearer" }
+        }
     },
-    {
-      "name": "Admin Dashboard",
-      "description": "Dashboard metrics and charts for the admin panel."
-    },
-    {
-      "name": "Admin Appeals",
-      "description": "Appeal queue management endpoints for support operators."
-    },
-    {
-      "name": "Admin Settings",
-      "description": "Assistant runtime settings managed from the admin panel."
-    },
-    {
-      "name": "Client Auth",
-      "description": "Public authentication endpoints for customer web and Telegram flows."
-    },
-    {
-      "name": "Client Requests",
-      "description": "Customer request lifecycle endpoints shared by web and Telegram."
-    }
-  ]
+    "tags": [
+        {
+            "name": "Admin Auth",
+            "description": "Authentication endpoints for the admin panel."
+        },
+        {
+            "name": "Admin Dashboard",
+            "description": "Dashboard metrics and charts for the admin panel."
+        },
+        {
+            "name": "Admin Appeals",
+            "description": "Appeal queue management endpoints for support operators."
+        },
+        {
+            "name": "Admin Settings",
+            "description": "Assistant runtime settings managed from the admin panel."
+        },
+        {
+            "name": "Client Auth",
+            "description": "Public authentication endpoints for customer web and Telegram flows."
+        },
+        {
+            "name": "Client Requests",
+            "description": "Customer request lifecycle endpoints shared by web and Telegram."
+        }
+    ]
 }

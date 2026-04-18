@@ -77,6 +77,34 @@ class AppealDetailResponse(AppealListItemResponse):
     created_at: datetime
 
 
+class AppealConversationMessageItem(BaseModel):
+    """Single message in an appeal thread (matches client request message shape)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    role: str
+    author_login: str | None
+    text: str
+    created_at: datetime
+
+
+class AppealConversationResponse(BaseModel):
+    """Full thread for an appeal — same fields as client `ClientRequestDetailResponse`."""
+
+    id: str
+    title: str | None
+    description: str | None
+    status: AppealStatusValue
+    priority: AppealPriorityValue
+    category: str
+    channel: Literal["web", "telegram"] = "web"
+    created_at: datetime
+    updated_at: datetime
+    closed_at: datetime | None
+    messages: list[AppealConversationMessageItem]
+
+
 class AppealStatusResponse(BaseModel):
     id: str
     status: Literal["in_progress"]

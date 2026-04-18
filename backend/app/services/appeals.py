@@ -6,7 +6,11 @@ from fastapi import HTTPException, status
 
 from backend.app.db.models.entities import Ticket
 from backend.app.db.repositories.admin import AdminRepository
-from backend.app.schemas.admin import AppealsListQuery
+from backend.app.schemas.admin import (
+    AppealConversationMessageItem,
+    AppealConversationResponse,
+    AppealsListQuery,
+)
 
 
 def ensure_utc(value: datetime | None) -> datetime | None:
@@ -34,6 +38,32 @@ class AppealsService:
         if ticket is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Appeal not found.")
         return ticket
+
+    async def get_appeal_conversation(self, appeal_id: str) -> AppealConversationResponse:
+        ticket = await self.get_appeal(appeal_id)
+        ordered = sorted(ticket.messages, key=lambda m: m.created_at)
+        return AppealConversationResponse(
+            id=ticket.id,
+            title=ticket.title,
+            description=ticket.description,
+            status=ticket.status,
+            priority=ticket.priority,
+            category=ticket.category,
+            channel="web",
+            created_at=ticket.created_at,
+            updated_at=ticket.updated_at,
+            closed_at=ticket.closed_at,
+            messages=[
+                AppealConversationMessageItem(
+                    id=m.id,
+                    role=m.role,
+                    author_login=m.author_login,
+                    text=m.text,
+                    created_at=m.created_at,
+                )
+                for m in ordered
+            ],
+        )
 
     async def take_appeal(self, appeal_id: str, user_id: str) -> Ticket:
         ticket = await self.get_appeal(appeal_id)

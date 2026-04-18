@@ -14,12 +14,7 @@ export function getRouter() {
             defaultPreload: "intent",
             context: {
                 queryClient,
-                tenantId: undefined as number | undefined,
                 token: undefined as string | undefined,
-                isMobile: false,
-                dismissedBanners: undefined as string | undefined,
-                sidebarTourSeen: false,
-                issuesBannerCollapsed: false,
             },
         }),
         queryClient,

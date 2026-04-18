@@ -7,19 +7,12 @@ export const Route = createFileRoute("/_auth")({
 function AuthLayout() {
     return (
         <>
-            <header className="fixed left-0 top-0 z-10 px-6 py-5">
+            <header className="fixed left-0 top-0 z-10 px-4 py-4 sm:px-6 sm:py-5">
                 <Link
                     to="/"
-                    className="hidden sm:inline-flex items-center gap-2.5 group"
+                    className="font-heading hidden items-center rounded-full border border-[var(--brand-border)] bg-white/90 px-4 py-2 text-[13px] font-semibold tracking-tight text-[var(--brand-dark)] shadow-[0_2px_12px_-6px_rgba(42,31,54,0.08)] backdrop-blur-md transition-colors hover:bg-white sm:inline-flex"
                 >
-                    <img
-                        src="/images/common/logo.webp"
-                        alt="Пульсар"
-                        className="size-8 rounded-xl transition-transform duration-200 group-hover:scale-105"
-                    />
-                    <span className="font-pixel text-lg tracking-wide text-foreground">
-                        Пульсар
-                    </span>
+                    Балтийский Берег
                 </Link>
             </header>
             <Outlet />

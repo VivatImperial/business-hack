@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Query
 from backend.app.helpers.dependencies import get_appeals_service, get_current_admin
 from backend.app.schemas.admin import (
     AppealCloseResponse,
+    AppealConversationResponse,
     AppealDetailResponse,
     AppealListItemResponse,
     AppealRatingResponse,
@@ -54,6 +55,23 @@ async def list_appeals(
     query = AppealsListQuery(date_from=date_from, date_to=date_to, scope=scope, status=status)
     tickets = await appeals_service.list_appeals(query)
     return AppealsListResponse(items=[_serialize_appeal(appeals_service, ticket) for ticket in tickets])
+
+
+@router.get(
+    "/{appeal_id}/conversation",
+    response_model=AppealConversationResponse,
+    summary="Get appeal conversation",
+    description=(
+        "Return the full message thread for an appeal. "
+        "Use this from the admin UI instead of client /requests/{id}, which is scoped to the ticket owner."
+    ),
+)
+async def get_appeal_conversation(
+    appeal_id: str,
+    _: Annotated[object, Depends(get_current_admin)],
+    appeals_service: AppealsService = Depends(get_appeals_service),
+) -> AppealConversationResponse:
+    return await appeals_service.get_appeal_conversation(appeal_id)
 
 
 @router.get(

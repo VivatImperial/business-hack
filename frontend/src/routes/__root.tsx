@@ -25,7 +25,7 @@ interface RootRouteContext {
     token: string | undefined;
 }
 
-const AUTH_PATHS = ["/login"];
+const AUTH_PATHS = ["/login", "/register", "/admin/login"];
 const PUBLIC_PATHS = ["/"];
 
 function isAuthPath(pathname: string): boolean {

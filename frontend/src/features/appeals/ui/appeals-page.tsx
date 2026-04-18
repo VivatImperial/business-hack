@@ -185,9 +185,63 @@ export function AppealsPage() {
             <div className="flex flex-col gap-3">
                 {appealsQuery.isLoading ? (
                     <>
-                        <Skeleton className="h-[120px] rounded-2xl" />
-                        <Skeleton className="h-[120px] rounded-2xl" />
-                        <Skeleton className="h-[120px] rounded-2xl" />
+                        <div className="rounded-2xl bg-card p-5 md:p-6 shadow-card">
+                            <div className="flex flex-col gap-4">
+                                <div className="flex gap-2">
+                                    <Skeleton className="h-6 w-20 rounded-md" />
+                                    <Skeleton className="h-6 w-24 rounded-md" />
+                                    <Skeleton className="h-6 w-28 rounded-md" />
+                                </div>
+                                <div className="flex justify-between items-end">
+                                    <div className="flex flex-col gap-2">
+                                        <Skeleton className="h-5 w-32" />
+                                        <Skeleton className="h-4 w-40" />
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Skeleton className="h-10 w-32 rounded-lg" />
+                                        <Skeleton className="h-10 w-36 rounded-lg" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="rounded-2xl bg-card p-5 md:p-6 shadow-card">
+                            <div className="flex flex-col gap-4">
+                                <div className="flex gap-2">
+                                    <Skeleton className="h-6 w-24 rounded-md" />
+                                    <Skeleton className="h-6 w-20 rounded-md" />
+                                    <Skeleton className="h-6 w-32 rounded-md" />
+                                </div>
+                                <div className="flex justify-between items-end">
+                                    <div className="flex flex-col gap-2">
+                                        <Skeleton className="h-5 w-40" />
+                                        <Skeleton className="h-4 w-36" />
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Skeleton className="h-10 w-32 rounded-lg" />
+                                        <Skeleton className="h-10 w-36 rounded-lg" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="rounded-2xl bg-card p-5 md:p-6 shadow-card">
+                            <div className="flex flex-col gap-4">
+                                <div className="flex gap-2">
+                                    <Skeleton className="h-6 w-16 rounded-md" />
+                                    <Skeleton className="h-6 w-28 rounded-md" />
+                                    <Skeleton className="h-6 w-24 rounded-md" />
+                                </div>
+                                <div className="flex justify-between items-end">
+                                    <div className="flex flex-col gap-2">
+                                        <Skeleton className="h-5 w-28" />
+                                        <Skeleton className="h-4 w-44" />
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Skeleton className="h-10 w-32 rounded-lg" />
+                                        <Skeleton className="h-10 w-36 rounded-lg" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </>
                 ) : appealsQuery.isError ? (
                     <div className="rounded-2xl bg-card p-8 shadow-card flex flex-col items-center gap-3 text-center">

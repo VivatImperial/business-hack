@@ -51,12 +51,21 @@ const HEALTH_MAP: Record<HealthStatus, { color: string; pulse: boolean }> = {
 export function HealthIndicator({ status }: HealthIndicatorProps) {
     const info = HEALTH_MAP[status];
     return (
-        <span
-            className={cn(
-                "inline-block size-2.5 rounded-full",
-                info.color,
-                info.pulse && "animate-soft-pulse",
+        <span className="relative flex size-2.5 items-center justify-center">
+            {info.pulse && (
+                <span
+                    className={cn(
+                        "absolute inline-flex h-full w-full animate-ping rounded-full opacity-75",
+                        info.color,
+                    )}
+                />
             )}
-        />
+            <span
+                className={cn(
+                    "relative inline-flex size-2.5 rounded-full",
+                    info.color,
+                )}
+            />
+        </span>
     );
 }

@@ -26,14 +26,35 @@ function ChatIllustration() {
                         strokeWidth="1"
                     />
                     <circle cx="22" cy="24" r="7" fill="var(--brand-accent)" />
-                    <rect x="40" y="17" width="86" height="5" rx="2.5" fill="var(--brand-dark)" opacity="0.35" />
-                    <rect x="40" y="27" width="52" height="5" rx="2.5" fill="var(--brand-dark)" opacity="0.2" />
+                    <rect
+                        x="40"
+                        y="17"
+                        width="86"
+                        height="5"
+                        rx="2.5"
+                        fill="var(--brand-dark)"
+                        opacity="0.35"
+                    />
+                    <rect
+                        x="40"
+                        y="27"
+                        width="52"
+                        height="5"
+                        rx="2.5"
+                        fill="var(--brand-dark)"
+                        opacity="0.2"
+                    />
                 </g>
             </g>
 
             <g className="transition-transform duration-500 ease-out origin-center group-hover:scale-110">
                 <g transform="translate(62,96)">
-                    <rect width="62" height="30" rx="12" fill="var(--brand-cream)" />
+                    <rect
+                        width="62"
+                        height="30"
+                        rx="12"
+                        fill="var(--brand-cream)"
+                    />
                     <circle cx="18" cy="15" r="3" fill="var(--brand-accent)">
                         <animate
                             attributeName="opacity"
@@ -42,7 +63,13 @@ function ChatIllustration() {
                             repeatCount="indefinite"
                         />
                     </circle>
-                    <circle cx="30" cy="15" r="3" fill="var(--brand-accent)" opacity="0.6">
+                    <circle
+                        cx="30"
+                        cy="15"
+                        r="3"
+                        fill="var(--brand-accent)"
+                        opacity="0.6"
+                    >
                         <animate
                             attributeName="opacity"
                             values="0.3;1;0.3"
@@ -51,7 +78,13 @@ function ChatIllustration() {
                             begin="0.2s"
                         />
                     </circle>
-                    <circle cx="42" cy="15" r="3" fill="var(--brand-accent)" opacity="0.3">
+                    <circle
+                        cx="42"
+                        cy="15"
+                        r="3"
+                        fill="var(--brand-accent)"
+                        opacity="0.3"
+                    >
                         <animate
                             attributeName="opacity"
                             values="0.3;1;0.3"
@@ -65,7 +98,12 @@ function ChatIllustration() {
 
             <g className="transition-transform duration-500 ease-out group-hover:translate-y-1">
                 <g transform="translate(80,138)">
-                    <rect width="200" height="48" rx="14" fill="var(--brand-dark)" />
+                    <rect
+                        width="200"
+                        height="48"
+                        rx="14"
+                        fill="var(--brand-dark)"
+                    />
                     <circle cx="20" cy="24" r="5" fill="var(--brand-sage)">
                         <animate
                             attributeName="r"
@@ -74,8 +112,24 @@ function ChatIllustration() {
                             repeatCount="indefinite"
                         />
                     </circle>
-                    <rect x="34" y="17" width="140" height="5" rx="2.5" fill="white" opacity="0.85" />
-                    <rect x="34" y="27" width="96" height="5" rx="2.5" fill="white" opacity="0.5" />
+                    <rect
+                        x="34"
+                        y="17"
+                        width="140"
+                        height="5"
+                        rx="2.5"
+                        fill="white"
+                        opacity="0.85"
+                    />
+                    <rect
+                        x="34"
+                        y="27"
+                        width="96"
+                        height="5"
+                        rx="2.5"
+                        fill="white"
+                        opacity="0.5"
+                    />
                 </g>
             </g>
         </svg>
@@ -89,7 +143,14 @@ function AdminIllustration() {
             className="absolute bottom-0 right-0 h-[58%] md:h-[70%] w-auto select-none"
             aria-hidden
         >
-            <rect x="28" y="24" width="248" height="150" rx="16" fill="var(--brand-dark-2)" />
+            <rect
+                x="28"
+                y="24"
+                width="248"
+                height="150"
+                rx="16"
+                fill="var(--brand-dark-2)"
+            />
             <rect
                 x="28"
                 y="24"
@@ -103,8 +164,20 @@ function AdminIllustration() {
 
             {/* Row 1 — slider */}
             <g transform="translate(44,48)">
-                <rect width="60" height="5" rx="2.5" fill="var(--brand-dark-3)" />
-                <rect x="0" y="14" width="216" height="5" rx="2.5" fill="var(--brand-dark)" />
+                <rect
+                    width="60"
+                    height="5"
+                    rx="2.5"
+                    fill="var(--brand-dark-3)"
+                />
+                <rect
+                    x="0"
+                    y="14"
+                    width="216"
+                    height="5"
+                    rx="2.5"
+                    fill="var(--brand-dark)"
+                />
                 <rect
                     x="0"
                     y="14"
@@ -125,8 +198,20 @@ function AdminIllustration() {
 
             {/* Row 2 — toggle */}
             <g transform="translate(44,90)">
-                <rect width="80" height="5" rx="2.5" fill="var(--brand-dark-3)" />
-                <rect x="170" y="-4" width="46" height="22" rx="11" fill="var(--brand-sage)" />
+                <rect
+                    width="80"
+                    height="5"
+                    rx="2.5"
+                    fill="var(--brand-dark-3)"
+                />
+                <rect
+                    x="170"
+                    y="-4"
+                    width="46"
+                    height="22"
+                    rx="11"
+                    fill="var(--brand-sage)"
+                />
                 <circle cx="206" cy="7" r="8" fill="white" />
             </g>
 
@@ -229,12 +314,52 @@ function KbIllustration() {
         >
             <g className="transition-transform duration-500 ease-out group-hover:translate-x-1 group-hover:rotate-[4deg]">
                 <g transform="translate(180,38) rotate(8)">
-                    <rect width="108" height="130" rx="10" fill="var(--brand-dark)" />
-                    <rect x="14" y="18" width="46" height="5" rx="2.5" fill="var(--brand-accent)" />
-                    <rect x="14" y="32" width="82" height="4" rx="2" fill="var(--brand-dark-3)" />
-                    <rect x="14" y="42" width="72" height="4" rx="2" fill="var(--brand-dark-3)" />
-                    <rect x="14" y="52" width="84" height="4" rx="2" fill="var(--brand-dark-3)" />
-                    <rect x="14" y="78" width="40" height="16" rx="5" fill="var(--brand-sage)" />
+                    <rect
+                        width="108"
+                        height="130"
+                        rx="10"
+                        fill="var(--brand-dark)"
+                    />
+                    <rect
+                        x="14"
+                        y="18"
+                        width="46"
+                        height="5"
+                        rx="2.5"
+                        fill="var(--brand-accent)"
+                    />
+                    <rect
+                        x="14"
+                        y="32"
+                        width="82"
+                        height="4"
+                        rx="2"
+                        fill="var(--brand-dark-3)"
+                    />
+                    <rect
+                        x="14"
+                        y="42"
+                        width="72"
+                        height="4"
+                        rx="2"
+                        fill="var(--brand-dark-3)"
+                    />
+                    <rect
+                        x="14"
+                        y="52"
+                        width="84"
+                        height="4"
+                        rx="2"
+                        fill="var(--brand-dark-3)"
+                    />
+                    <rect
+                        x="14"
+                        y="78"
+                        width="40"
+                        height="16"
+                        rx="5"
+                        fill="var(--brand-sage)"
+                    />
                 </g>
             </g>
 
@@ -249,12 +374,54 @@ function KbIllustration() {
                         stroke="var(--brand-dark)"
                         strokeWidth="1"
                     />
-                    <rect x="16" y="22" width="60" height="6" rx="3" fill="var(--brand-dark)" />
-                    <rect x="16" y="38" width="96" height="4" rx="2" fill="var(--brand-border)" />
-                    <rect x="16" y="48" width="72" height="4" rx="2" fill="var(--brand-border)" />
-                    <rect x="16" y="58" width="88" height="4" rx="2" fill="var(--brand-border)" />
-                    <rect x="16" y="68" width="80" height="4" rx="2" fill="var(--brand-border)" />
-                    <rect x="16" y="92" width="46" height="20" rx="6" fill="var(--brand-dark)" />
+                    <rect
+                        x="16"
+                        y="22"
+                        width="60"
+                        height="6"
+                        rx="3"
+                        fill="var(--brand-dark)"
+                    />
+                    <rect
+                        x="16"
+                        y="38"
+                        width="96"
+                        height="4"
+                        rx="2"
+                        fill="var(--brand-border)"
+                    />
+                    <rect
+                        x="16"
+                        y="48"
+                        width="72"
+                        height="4"
+                        rx="2"
+                        fill="var(--brand-border)"
+                    />
+                    <rect
+                        x="16"
+                        y="58"
+                        width="88"
+                        height="4"
+                        rx="2"
+                        fill="var(--brand-border)"
+                    />
+                    <rect
+                        x="16"
+                        y="68"
+                        width="80"
+                        height="4"
+                        rx="2"
+                        fill="var(--brand-border)"
+                    />
+                    <rect
+                        x="16"
+                        y="92"
+                        width="46"
+                        height="20"
+                        rx="6"
+                        fill="var(--brand-dark)"
+                    />
                     <circle cx="108" cy="134" r="6" fill="var(--brand-sage)">
                         <animate
                             attributeName="r"
@@ -268,7 +435,12 @@ function KbIllustration() {
 
             <g className="transition-transform duration-500 ease-out group-hover:-translate-x-1 group-hover:-translate-y-1">
                 <g transform="translate(24,150)">
-                    <rect width="56" height="24" rx="8" fill="var(--brand-dark)" />
+                    <rect
+                        width="56"
+                        height="24"
+                        rx="8"
+                        fill="var(--brand-dark)"
+                    />
                     <text
                         x="28"
                         y="16"
@@ -291,7 +463,7 @@ function MetricsIllustration() {
     return (
         <svg
             viewBox="0 0 300 200"
-            className="absolute bottom-0 right-0 h-[60%] md:h-[72%] w-auto select-none"
+            className="absolute bottom-0 -left-4 md:right-0 h-[60%] md:h-[72%] w-auto select-none"
             aria-hidden
         >
             <rect x="24" y="20" width="250" height="160" rx="16" fill="white" />
@@ -434,8 +606,7 @@ function cardClasses(variant: FeatureCard["variant"]) {
                 wrapper: "bg-[var(--brand-dark)] text-white",
                 title: "text-white",
                 text: "text-white/75",
-                button:
-                    "bg-white/10 text-white hover:bg-white/15 border border-white/15",
+                button: "bg-white/10 text-white hover:bg-white/15 border border-white/15",
             };
         case "terracotta":
             return {
@@ -496,7 +667,7 @@ export function FeaturesSection() {
                             <motion.div
                                 key={c.title}
                                 variants={blurFadeUp}
-                                className={`group relative flex min-h-[440px] flex-col overflow-hidden rounded-3xl p-6 sm:p-7 transition-transform duration-500 ease-out hover:-translate-y-1 md:min-h-[420px] md:p-9 ${cls.wrapper}`}
+                                className={`group relative flex min-h-[480px] flex-col overflow-hidden rounded-3xl p-6 sm:p-7 transition-transform duration-500 ease-out hover:-translate-y-1 md:min-h-[420px] md:p-9 ${cls.wrapper}`}
                             >
                                 <div className="relative z-10 max-w-[380px]">
                                     <h3
@@ -513,7 +684,7 @@ export function FeaturesSection() {
                                     <div className="mt-6">
                                         <Link
                                             to={c.href}
-                                            className={`inline-flex h-10 items-center justify-center rounded-full px-5 text-[13px] font-medium transition-colors ${cls.button}`}
+                                            className={`inline-flex h-10 items-center justify-center rounded-full px-4 text-[12px] font-medium transition-colors ${cls.button}`}
                                         >
                                             {c.ctaLabel}
                                         </Link>

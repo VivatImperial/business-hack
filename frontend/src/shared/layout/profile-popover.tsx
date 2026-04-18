@@ -6,8 +6,8 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/shared/ui/popover";
-import { useMeApiV1AdminMeGet } from "@/lib/api/generated/admin-auth/admin-auth";
-import { removeToken } from "@/lib/auth";
+import { useMe } from "@/lib/use-me";
+import { removeToken, removeRole } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 function getInitials(login: string): string {
@@ -17,36 +17,38 @@ function getInitials(login: string): string {
     return (letters[0] + letters[1]).toUpperCase();
 }
 
-export function ProfilePopover() {
+export function ProfilePopover({ trigger }: { trigger?: React.ReactNode }) {
     const navigate = useNavigate();
-    const { data } = useMeApiV1AdminMeGet();
-    const login = data?.status === 200 ? data.data.login : "";
-    const initials = login ? getInitials(login) : "AT";
+    const { login, isAdmin } = useMe();
+    const initials = login ? getInitials(login) : "??";
 
     const onLogout = () => {
         removeToken();
+        removeRole();
         navigate({ to: "/login" });
     };
 
     return (
         <Popover>
             <PopoverTrigger asChild>
-                <button
-                    type="button"
-                    className={cn(
-                        "w-full flex items-center gap-3 rounded-xl px-2.5 py-2 transition-colors",
-                        "hover:bg-sidebar-accent text-sidebar-foreground",
-                    )}
-                >
-                    <div className="size-9 rounded-full bg-sky-500/30 text-white flex items-center justify-center text-[13px] font-semibold shrink-0">
-                        {initials}
-                    </div>
-                    <div className="flex-1 text-left truncate">
-                        <div className="text-[13px] font-medium text-sidebar-accent-foreground truncate">
-                            {login || "—"}
+                {trigger || (
+                    <button
+                        type="button"
+                        className={cn(
+                            "w-full flex items-center gap-3 rounded-xl px-2.5 py-2 transition-colors",
+                            "hover:bg-sidebar-accent text-sidebar-foreground",
+                        )}
+                    >
+                        <div className="size-9 rounded-full bg-sky-500/30 text-white flex items-center justify-center text-[13px] font-semibold shrink-0">
+                            {initials}
                         </div>
-                    </div>
-                </button>
+                        <div className="flex-1 text-left truncate">
+                            <div className="text-[13px] font-medium text-sidebar-accent-foreground truncate">
+                                {login || "—"}
+                            </div>
+                        </div>
+                    </button>
+                )}
             </PopoverTrigger>
             <PopoverContent side="top" align="start" className="w-56 p-1">
                 <div className="flex items-center gap-3 px-3 py-2.5 mb-1 border-b border-border/50">
@@ -58,7 +60,7 @@ export function ProfilePopover() {
                             {login || "—"}
                         </span>
                         <span className="text-xs text-muted-foreground truncate">
-                            Администратор
+                            {isAdmin ? "Администратор" : "Сотрудник"}
                         </span>
                     </div>
                 </div>
