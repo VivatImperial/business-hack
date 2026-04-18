@@ -258,7 +258,15 @@ async def error_handler(
 
 
 def build_application(backend: BackendClient, token: str) -> Application:
-    application = Application.builder().token(token).build()
+    application = (
+        Application.builder()
+        .token(token)
+        .connect_timeout(30)
+        .read_timeout(30)
+        .write_timeout(30)
+        .pool_timeout(30)
+        .build()
+    )
     application.bot_data["context"] = BotContext(backend=backend)
     application.add_handler(CommandHandler("start", start_handler))
     application.add_handler(CommandHandler("help", help_handler))

@@ -47,4 +47,4 @@ PY
 ssh "$HOST" "apt-get update && apt-get install -y python3-pip python3-venv >/dev/null"
 ssh "$HOST" "cd \"$REMOTE_DIR/telegram-bot\" && python3 -m venv .venv && .venv/bin/pip install --upgrade pip >/dev/null && .venv/bin/pip install httpx pydantic-settings python-telegram-bot >/dev/null"
 ssh "$HOST" "cat > /etc/systemd/system/${SERVICE_NAME}.service" < telegram-bot/deploy/bb-telegram-bot.service
-ssh "$HOST" "systemctl daemon-reload && systemctl enable --now ${SERVICE_NAME} && systemctl status --no-pager ${SERVICE_NAME} | sed -n '1,20p'"
+ssh "$HOST" "systemctl daemon-reload && systemctl enable ${SERVICE_NAME} && systemctl restart ${SERVICE_NAME} && systemctl status --no-pager ${SERVICE_NAME} | sed -n '1,20p'"
