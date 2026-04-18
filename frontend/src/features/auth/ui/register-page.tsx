@@ -197,7 +197,7 @@ export function RegisterPage() {
                     <Button
                         type="submit"
                         disabled={registerMutation.isPending}
-                        className="h-12 w-full bg-primary text-base font-medium text-primary-foreground hover:bg-navy-800"
+                        className="h-12 w-full bg-primary text-base font-medium text-primary-foreground hover:bg-orange-800"
                     >
                         {registerMutation.isPending ? (
                             <Spinner />

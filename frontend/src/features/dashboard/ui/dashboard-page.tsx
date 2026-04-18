@@ -225,12 +225,12 @@ export function DashboardPage() {
                                     >
                                         <stop
                                             offset="0%"
-                                            stopColor="#152b52"
+                                            stopColor="#ea580c"
                                             stopOpacity={0.25}
                                         />
                                         <stop
                                             offset="100%"
-                                            stopColor="#152b52"
+                                            stopColor="#ea580c"
                                             stopOpacity={0}
                                         />
                                     </linearGradient>
@@ -271,7 +271,7 @@ export function DashboardPage() {
                                 <Area
                                     type="monotone"
                                     dataKey="messages_count"
-                                    stroke="#152b52"
+                                    stroke="#ea580c"
                                     strokeWidth={2}
                                     fill="url(#msgGradient)"
                                     animationDuration={600}

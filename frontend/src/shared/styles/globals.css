@@ -19,7 +19,8 @@
 
 /* =========================================================================
    Baltiyskiy Bereg — design tokens
-   - Primary: deep navy blue (sidebar background + CTA)
+   - Structure / type: deep navy (sidebar, headings, brand-dark)
+   - Accent: warm orange (primary buttons, rings, charts — pairs with navy + gray)
    - Canvas: very light grey (app background)
    - Card: pure white with subtle shadow
    ========================================================================= */
@@ -105,14 +106,14 @@
 }
 
 :root {
-    /* Landing brand palette (navy / slate / sky / background) */
+    /* Landing brand palette (navy / slate / orange accent / background) */
     --brand-dark: #152b52;
     --brand-dark-2: #1f345a;
     --brand-dark-3: #2a4472;
-    --brand-accent: #6781ad;
-    --brand-accent-deep: #3c5a8c;
-    --brand-sage: #e3e9f3;
-    --brand-sage-deep: #c4cfe4;
+    --brand-accent: #fb923c;
+    --brand-accent-deep: #ea580c;
+    --brand-sage: #fff7ed;
+    --brand-sage-deep: #ffedd5;
     --brand-cream: #f4f5f7;
     --brand-cream-2: #e3e7ed;
     --brand-border: #cbd1db;
@@ -124,7 +125,7 @@
     --background: #f4f5f7;
     --foreground: #171b24;
 
-    --primary: #152b52;
+    --primary: #ea580c;
     --primary-foreground: #ffffff;
 
     --secondary: #f1f3f6;
@@ -133,15 +134,15 @@
     --muted: #f4f5f7;
     --muted-foreground: #6b7584;
 
-    --accent: #e3e9f3;
-    --accent-foreground: #152b52;
+    --accent: #fff7ed;
+    --accent-foreground: #9a3412;
 
     --destructive: #ef4444;
     --destructive-foreground: #ffffff;
 
     --border: #e3e7ed;
     --input: #ffffff;
-    --ring: #152b52;
+    --ring: #f97316;
 
     --card: #ffffff;
     --card-foreground: #171b24;
@@ -152,7 +153,7 @@
     --sidebar-background: #152b52;
     --sidebar-foreground: #c4cfe4;
     --sidebar-primary: #ffffff;
-    --sidebar-primary-foreground: #152b52;
+    --sidebar-primary-foreground: #9a3412;
     --sidebar-accent: #1f345a;
     --sidebar-accent-foreground: #ffffff;
     --sidebar-border: #1f345a;
@@ -270,7 +271,7 @@ textarea:disabled {
             ),
             radial-gradient(
                 circle at 70% 80%,
-                rgba(149, 167, 200, 0.15),
+                rgba(251, 146, 60, 0.14),
                 transparent 50%
             ),
             #152b52;

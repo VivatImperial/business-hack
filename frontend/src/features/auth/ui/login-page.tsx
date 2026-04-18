@@ -123,7 +123,7 @@ export function LoginPage() {
                     <Button
                         type="submit"
                         disabled={loginMutation.isPending}
-                        className="h-12 w-full bg-primary text-base font-medium text-primary-foreground hover:bg-navy-800"
+                        className="h-12 w-full bg-primary text-base font-medium text-primary-foreground hover:bg-orange-800"
                     >
                         {loginMutation.isPending ? (
                             <Spinner />

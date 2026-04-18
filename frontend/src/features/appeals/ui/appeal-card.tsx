@@ -91,7 +91,7 @@ export function AppealCard({
                             <Button
                                 onClick={onTake}
                                 disabled={isTaking}
-                                className="bg-primary hover:bg-navy-800"
+                                className="bg-primary hover:bg-orange-800"
                             >
                                 Взять в работу
                                 <ArrowRightIcon className="size-4" />
@@ -100,7 +100,7 @@ export function AppealCard({
                         {!isOpen && !isClosed && (
                             <Button
                                 onClick={onGoToChat}
-                                className="bg-primary hover:bg-navy-800"
+                                className="bg-primary hover:bg-orange-800"
                             >
                                 К чату
                                 <ArrowRightIcon className="size-4" />
