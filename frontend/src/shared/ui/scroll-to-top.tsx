@@ -65,7 +65,7 @@ export function ScrollToTop({
                     transition={{ duration: 0.2 }}
                     aria-label="Наверх"
                     className={cn(
-                        "fixed bottom-6 right-6 z-40 flex size-11 items-center justify-center rounded-full border border-[var(--brand-border)] bg-white text-[var(--brand-dark)] transition-colors hover:bg-[var(--brand-cream)]",
+                        "fixed bottom-[140px] md:bottom-6 right-6 z-40 flex size-11 items-center justify-center rounded-full border border-[var(--brand-border)] bg-white text-[var(--brand-dark)] transition-colors hover:bg-[var(--brand-cream)] shadow-md",
                         className,
                     )}
                 >

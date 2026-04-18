@@ -55,7 +55,7 @@ export function ChatInput({ onSend, disabled, autoFocus }: ChatInputProps) {
         <form
             onSubmit={submit}
             className={cn(
-                "flex items-end gap-2 bg-card rounded-2xl shadow-card px-4 py-3 ring-1 ring-border",
+                "flex items-end gap-2 bg-card rounded-2xl shadow-card px-3 py-2 ring-1 ring-border md:px-4 md:py-3",
                 "focus-within:ring-navy-300 transition-shadow",
             )}
         >
@@ -67,13 +67,13 @@ export function ChatInput({ onSend, disabled, autoFocus }: ChatInputProps) {
                 placeholder="Напишите вопрос ассистенту…"
                 rows={1}
                 disabled={disabled}
-                className="flex-1 resize-none bg-transparent outline-none text-[15px] text-foreground placeholder:text-muted-foreground/60 max-h-60"
+                className="flex-1 resize-none bg-transparent outline-none text-[16px] text-foreground placeholder:text-muted-foreground/60 max-h-60 py-1"
             />
             <button
                 type="submit"
                 disabled={empty || disabled}
                 className={cn(
-                    "inline-flex items-center justify-center size-10 rounded-xl transition-all",
+                    "inline-flex items-center justify-center size-9 md:size-10 rounded-xl transition-all shrink-0",
                     "bg-primary text-primary-foreground hover:bg-[var(--brand-dark-2)]",
                     "disabled:opacity-40 disabled:cursor-not-allowed",
                     "active:scale-95",

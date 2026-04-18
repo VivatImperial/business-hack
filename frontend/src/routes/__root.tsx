@@ -120,7 +120,7 @@ export const Route = createRootRouteWithContext<RootRouteContext>()({
             { charSet: "utf-8" },
             {
                 name: "viewport",
-                content: "width=device-width, initial-scale=1",
+                content: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0",
             },
             { title: SITE_TITLE },
             { name: "description", content: SITE_DESCRIPTION },

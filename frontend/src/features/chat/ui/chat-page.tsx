@@ -290,8 +290,8 @@ function ChatConversation({ requestId }: { requestId: string }) {
             }
         >
             {detail?.title && (
-                <div className="mb-4 flex items-center justify-between gap-3 border-b border-border/60 pb-3">
-                    <h1 className="font-heading truncate text-[15px] font-semibold text-foreground">
+                <div className="mb-4 flex flex-col items-start gap-2 border-b border-border/60 pb-3">
+                    <h1 className="font-heading text-[15px] font-semibold text-foreground leading-snug">
                         {detail.title}
                     </h1>
                     <StatusBadge status={detail.status} />
@@ -348,19 +348,19 @@ function ChatLayout({
     onScroll?: (e: React.UIEvent<HTMLDivElement>) => void;
 }) {
     return (
-        <div className="flex h-full max-h-full flex-1 flex-col overflow-hidden">
+        <div className="flex flex-col w-full overflow-hidden h-[calc(100svh-92px)] md:h-[calc(100svh-48px)]">
             <div
                 ref={scrollerRef}
                 onScroll={onScroll}
-                className="flex-1 overflow-y-auto"
+                className="flex-1 overflow-y-auto overscroll-contain"
             >
-                <div className="mx-auto w-full max-w-4xl px-4 py-8 md:px-6">
+                <div className="mx-auto w-full max-w-4xl px-2 py-4 md:py-8 md:px-6 pb-6">
                     {children}
                 </div>
             </div>
             {footer ? (
-                <div className="shrink-0 bg-background pb-6 pt-2">
-                    <div className="mx-auto w-full max-w-4xl px-4 md:px-6">
+                <div className="shrink-0 border-t border-[var(--brand-border)]/60 bg-background/95 pt-2 pb-2 md:border-t-0 md:bg-background md:pb-6 md:pt-2">
+                    <div className="mx-auto w-full max-w-4xl px-2 md:px-6">
                         {footer}
                     </div>
                 </div>

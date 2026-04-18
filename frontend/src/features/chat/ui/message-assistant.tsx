@@ -29,9 +29,11 @@ export function MessageAssistant({
             }}
             className="flex gap-3"
         >
-            <AssistantAvatar size={40} pulse={isPending} />
+            <div className="shrink-0">
+                <AssistantAvatar size={40} pulse={isPending} />
+            </div>
             <div className="flex min-w-0 flex-1 flex-col gap-2">
-                <div className="whitespace-pre-wrap rounded-2xl border border-[var(--brand-border)] bg-card px-4 py-3 text-[15px] leading-relaxed text-foreground">
+                <div className="w-fit max-w-full overflow-hidden whitespace-pre-wrap break-words rounded-2xl border border-[var(--brand-border)] bg-card px-4 py-3 text-[15px] leading-relaxed text-foreground">
                     {isPending ? (
                         <TypingDots />
                     ) : (

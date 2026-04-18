@@ -21,7 +21,7 @@ export function MessageUser({ message, index = 0 }: MessageUserProps) {
             }}
             className="flex justify-end"
         >
-            <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl bg-primary px-4 py-3 text-[15px] leading-relaxed text-primary-foreground">
+            <div className="max-w-[90%] md:max-w-[85%] overflow-hidden whitespace-pre-wrap break-words rounded-2xl bg-primary px-4 py-3 text-[15px] leading-relaxed text-primary-foreground">
                 {message.text}
             </div>
         </motion.div>
