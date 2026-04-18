@@ -74,7 +74,7 @@ export function ChatInput({ onSend, disabled, autoFocus }: ChatInputProps) {
                 disabled={empty || disabled}
                 className={cn(
                     "inline-flex items-center justify-center size-10 rounded-xl transition-all",
-                    "bg-primary text-primary-foreground hover:bg-navy-800",
+                    "bg-primary text-primary-foreground hover:bg-[var(--brand-dark-2)]",
                     "disabled:opacity-40 disabled:cursor-not-allowed",
                     "active:scale-95",
                 )}

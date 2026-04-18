@@ -18,10 +18,18 @@
 }
 
 /* =========================================================================
-   Baltiyskiy Bereg — design tokens
-   - Primary: deep navy blue (sidebar background + CTA)
-   - Canvas: very light grey (app background)
-   - Card: pure white with subtle shadow
+   Balt Bereg — palette
+   -----------------------------------------------------------------------------
+   Cloud-vibe (restrained, editorial), but not a copy. Core:
+   - Ink `#0a1530`     — near-navy for BODY TEXT (replaces near-black)
+   - Brand-dark `#0d2246`  — for buttons/sidebar/heading fills
+   - Accent `#3361ff`  — electric blue for highlights, focus rings, charts
+   - Cream `#f5f7fc`   — canvas (warm-blue tinted white)
+   - Border `#d5dce8`  — bluish border for every card
+   - Peach `#ffbe94`   — warm accent for sparkles / illustrations
+   - Mint `#7bd4a8`    — status-ok / csat
+   -----------------------------------------------------------------------------
+   No shadows in flat UI. All card edges = 1px bluish border. Radius reduced.
    ========================================================================= */
 
 @theme inline {
@@ -54,30 +62,41 @@
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
 
-    /* Navy palette (brand) */
-    --color-navy-50: #f2f5fb;
-    --color-navy-100: #e3e9f3;
-    --color-navy-200: #c4cfe4;
-    --color-navy-300: #95a7c8;
-    --color-navy-400: #6781ad;
-    --color-navy-500: #3c5a8c;
-    --color-navy-600: #2a4472;
-    --color-navy-700: #1f345a;
-    --color-navy-800: #17294a;
-    --color-navy-900: #152b52;
-    --color-navy-950: #0b1834;
+    /* Navy scale — re-tuned around new ink+brand-dark */
+    --color-navy-50: #f5f7fc;
+    --color-navy-100: #e9edf7;
+    --color-navy-200: #d5dce8;
+    --color-navy-300: #a7b3cc;
+    --color-navy-400: #7987a6;
+    --color-navy-500: #4a5a7e;
+    --color-navy-600: #2e416b;
+    --color-navy-700: #1d3056;
+    --color-navy-800: #132849;
+    --color-navy-900: #0d2246;
+    --color-navy-950: #0a1530;
 
-    /* Neutral slate/gray */
-    --color-slate-50: #f8f9fb;
-    --color-slate-100: #f1f3f6;
-    --color-slate-200: #e3e7ed;
-    --color-slate-300: #cbd1db;
-    --color-slate-400: #9aa3b3;
-    --color-slate-500: #6b7584;
-    --color-slate-600: #515969;
-    --color-slate-700: #3d4452;
-    --color-slate-800: #272c38;
-    --color-slate-900: #171b24;
+    /* Cloud-blue accent scale (for charts, rings, highlights) */
+    --color-accentblue-50: #eff3ff;
+    --color-accentblue-100: #e3eaff;
+    --color-accentblue-200: #c5d1ff;
+    --color-accentblue-300: #9db0ff;
+    --color-accentblue-400: #6f85ff;
+    --color-accentblue-500: #3361ff;
+    --color-accentblue-600: #1f43d4;
+    --color-accentblue-700: #1936a9;
+    --color-accentblue-800: #132a82;
+
+    /* Neutral slate — kept for backwards compat */
+    --color-slate-50: #f5f7fc;
+    --color-slate-100: #eef1f8;
+    --color-slate-200: #e0e5f0;
+    --color-slate-300: #c5cddc;
+    --color-slate-400: #8892ab;
+    --color-slate-500: #5a6378;
+    --color-slate-600: #404a63;
+    --color-slate-700: #29334c;
+    --color-slate-800: #18223a;
+    --color-slate-900: #0a1530;
 
     /* Status */
     --color-success: #10b981;
@@ -87,11 +106,11 @@
     --color-danger: #ef4444;
     --color-danger-soft: #fee2e2;
 
-    /* Shadows - removed per request, using borders instead */
+    /* No shadows — flat cards with bluish borders instead */
     --shadow-card: none;
     --shadow-pop: none;
 
-    /* Radius - reduced per request */
+    /* Radius */
     --radius-sm: 0.25rem;
     --radius-md: 0.375rem;
     --radius-lg: 0.5rem;
@@ -105,58 +124,64 @@
 }
 
 :root {
-    /* Landing brand palette (navy / slate / sky / background) */
-    --brand-dark: #152b52;
-    --brand-dark-2: #1f345a;
-    --brand-dark-3: #2a4472;
-    --brand-accent: #6781ad;
-    --brand-accent-deep: #3c5a8c;
-    --brand-sage: #e3e9f3;
-    --brand-sage-deep: #c4cfe4;
-    --brand-cream: #f4f5f7;
-    --brand-cream-2: #e3e7ed;
-    --brand-border: #cbd1db;
-    --brand-text: #171b24;
-    --brand-text-dim: #515969;
+    /* ─── Brand semantic tokens (used in landing + admin + chat) ─── */
+    --brand-ink: #0a1530;          /* near-navy text — use instead of black */
+    --brand-dark: #0d2246;         /* primary surface + buttons */
+    --brand-dark-2: #132e5a;       /* hover on brand-dark */
+    --brand-dark-3: #1d4081;
+    --brand-accent: #3361ff;       /* electric blue punch (focus, charts) */
+    --brand-accent-deep: #1f43d4;  /* active state */
+    --brand-accent-soft: #e3eaff;  /* soft blue wash for chips */
+    --brand-sage: #edf2fa;         /* very light blue, hover bg */
+    --brand-sage-deep: #d8e1f0;
+    --brand-cream: #f5f7fc;        /* canvas */
+    --brand-cream-2: #e9edf7;      /* subtle panel */
+    --brand-border: #d5dce8;       /* default bluish border */
+    --brand-border-soft: #e5ebf3;  /* subtle divider */
+    --brand-text: #0a1530;
+    --brand-text-dim: #5a6378;
+    --brand-peach: #ffbe94;        /* warm illustration accent */
+    --brand-mint: #7bd4a8;         /* status ok */
 
     --sidebar-width: 260px;
 
-    --background: #f4f5f7;
-    --foreground: #171b24;
+    /* ─── shadcn semantic tokens — mapped onto brand palette ─── */
+    --background: #f5f7fc;
+    --foreground: #0a1530;
 
-    --primary: #152b52;
+    --primary: #0d2246;
     --primary-foreground: #ffffff;
 
-    --secondary: #f1f3f6;
-    --secondary-foreground: #171b24;
+    --secondary: #e9edf7;
+    --secondary-foreground: #0a1530;
 
-    --muted: #f4f5f7;
-    --muted-foreground: #6b7584;
+    --muted: #f5f7fc;
+    --muted-foreground: #5a6378;
 
-    --accent: #e3e9f3;
-    --accent-foreground: #152b52;
+    --accent: #e3eaff;
+    --accent-foreground: #1f43d4;
 
     --destructive: #ef4444;
     --destructive-foreground: #ffffff;
 
-    --border: #e3e7ed;
+    --border: #d5dce8;
     --input: #ffffff;
-    --ring: #152b52;
+    --ring: #3361ff;
 
     --card: #ffffff;
-    --card-foreground: #171b24;
+    --card-foreground: #0a1530;
 
     --popover: #ffffff;
-    --popover-foreground: #171b24;
+    --popover-foreground: #0a1530;
 
-    --sidebar-background: #152b52;
-    --sidebar-foreground: #c4cfe4;
+    --sidebar-background: #0d2246;
+    --sidebar-foreground: #c3cbe0;
     --sidebar-primary: #ffffff;
-    --sidebar-primary-foreground: #152b52;
-    --sidebar-accent: #1f345a;
+    --sidebar-primary-foreground: #0d2246;
+    --sidebar-accent: #132e5a;
     --sidebar-accent-foreground: #ffffff;
-    --sidebar-border: #1f345a;
-    --sidebar-ring: #ffffff;
+    --sidebar-border: #132e5a;
+    --sidebar-ring: #3361ff;
 }
 
 html,
@@ -172,11 +197,20 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+/* Selection colour across the app */
+::selection {
+    background: var(--brand-accent-soft);
+    color: var(--brand-dark);
+}
+
 /* Offset for sticky header when jumping via #anchor */
 section[id] {
     scroll-margin-top: 96px;
 }
 
+/* Headings: Onest + tight tracking.
+ * Intentionally NO `color` here — let the component decide (so
+ * white-on-navy headings and coloured accent titles work without `!`). */
 h1,
 h2,
 h3,
@@ -213,11 +247,12 @@ textarea:disabled {
     }
 }
 
-/* Animations */
+/* ───── Animations ───── */
+
 @keyframes soft-pulse {
     0%,
     100% {
-        opacity: 0.8;
+        opacity: 0.85;
     }
     50% {
         opacity: 1;
@@ -227,11 +262,31 @@ textarea:disabled {
 @keyframes fade-in-up {
     from {
         opacity: 0;
-        transform: translateY(2px);
+        transform: translateY(4px);
     }
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@keyframes scale-in {
+    from {
+        opacity: 0;
+        transform: scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes shimmer {
+    from {
+        background-position: -200px 0;
+    }
+    to {
+        background-position: calc(200px + 100%) 0;
     }
 }
 
@@ -240,8 +295,27 @@ textarea:disabled {
 }
 
 .animate-fade-in-up {
-    animation: fade-in-up 0.15s ease-out forwards;
+    animation: fade-in-up 0.22s ease-out forwards;
 }
+
+.animate-scale-in {
+    animation: scale-in 0.2s ease-out forwards;
+}
+
+/* Shimmer utility for skeletons */
+.animate-shimmer {
+    background-image: linear-gradient(
+        90deg,
+        var(--brand-cream) 0%,
+        var(--brand-sage) 50%,
+        var(--brand-cream) 100%
+    );
+    background-size: 200px 100%;
+    background-repeat: no-repeat;
+    animation: shimmer 1.4s linear infinite;
+}
+
+/* ───── Utility classes ───── */
 
 @layer utilities {
     .font-heading {
@@ -260,7 +334,14 @@ textarea:disabled {
         scrollbar-width: none;
     }
 
-    /* Gradient brand tile */
+    /* Subtle bluish card — used everywhere in admin/landing */
+    .card-soft {
+        background-color: var(--card);
+        border: 1px solid var(--brand-border);
+        border-radius: var(--radius-xl);
+    }
+
+    /* Navy hero surface with subtle radial glow */
     .bg-sea-gradient {
         background:
             radial-gradient(
@@ -270,9 +351,52 @@ textarea:disabled {
             ),
             radial-gradient(
                 circle at 70% 80%,
-                rgba(149, 167, 200, 0.15),
-                transparent 50%
+                rgba(51, 97, 255, 0.2),
+                transparent 55%
             ),
-            #152b52;
+            #0d2246;
+    }
+
+    /* Warm auth-photo overlay — tints the photo into brand gamut */
+    .bg-auth-overlay {
+        background:
+            linear-gradient(
+                135deg,
+                rgba(13, 34, 70, 0.35) 0%,
+                rgba(13, 34, 70, 0) 45%,
+                rgba(51, 97, 255, 0.22) 100%
+            ),
+            radial-gradient(
+                60% 80% at 20% 10%,
+                rgba(255, 255, 255, 0.18) 0%,
+                transparent 70%
+            ),
+            radial-gradient(
+                80% 60% at 90% 100%,
+                rgba(13, 34, 70, 0.55) 0%,
+                transparent 70%
+            );
+        mix-blend-mode: multiply;
+    }
+
+    /* Cream canvas with subtle dotted pattern (landing + empty admin states) */
+    .bg-dot-pattern {
+        background-image:
+            radial-gradient(
+                circle,
+                var(--brand-border) 1px,
+                transparent 1px
+            );
+        background-size: 22px 22px;
+    }
+
+    /* Reduced motion respect */
+    @media (prefers-reduced-motion: reduce) {
+        .animate-fade-in-up,
+        .animate-scale-in,
+        .animate-shimmer,
+        .animate-soft-pulse {
+            animation: none !important;
+        }
     }
 }

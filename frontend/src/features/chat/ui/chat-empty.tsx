@@ -1,3 +1,6 @@
+import { AssistantAvatar } from "@/shared/ui/assistant-avatar";
+import { motion, listFadeUp } from "@/shared/animations/motion";
+
 interface ChatEmptyProps {
     onSuggest: (text: string) => void;
     disabled?: boolean;
@@ -12,15 +15,9 @@ const SUGGESTIONS = [
 
 export function ChatEmpty({ onSuggest, disabled }: ChatEmptyProps) {
     return (
-        <div className="flex flex-col items-center text-center gap-6 py-10 animate-fade-in-up">
-            <div className="size-16 rounded-2xl bg-white flex items-center justify-center shadow-sm overflow-hidden p-2">
-                <img
-                    src="/images/layout/logo.webp"
-                    alt="Балтийский Берег"
-                    className="w-full h-auto object-contain"
-                />
-            </div>
-            <div className="flex flex-col gap-2 max-w-md">
+        <div className="flex flex-col items-center gap-6 py-10 text-center">
+            <AssistantAvatar size={88} pulse />
+            <div className="flex max-w-md flex-col gap-2">
                 <h2 className="text-2xl font-semibold text-foreground">
                     Задайте вопрос ассистенту
                 </h2>
@@ -29,19 +26,30 @@ export function ChatEmpty({ onSuggest, disabled }: ChatEmptyProps) {
                     внутренним сервисам «Балтийский Берег».
                 </p>
             </div>
-            <div className="grid sm:grid-cols-2 gap-2 w-full max-w-lg">
+            <motion.div
+                variants={{
+                    hidden: {},
+                    show: { transition: { staggerChildren: 0.05 } },
+                }}
+                initial="hidden"
+                animate="show"
+                className="grid w-full max-w-lg gap-2 sm:grid-cols-2"
+            >
                 {SUGGESTIONS.map((s) => (
-                    <button
+                    <motion.button
                         key={s}
+                        variants={listFadeUp}
                         type="button"
                         disabled={disabled}
                         onClick={() => onSuggest(s)}
-                        className="text-left text-[14px] text-foreground bg-card rounded-xl px-4 py-3 shadow-card hover:shadow-pop transition-shadow disabled:opacity-50"
+                        whileHover={{ y: -1 }}
+                        whileTap={{ scale: 0.99 }}
+                        className="rounded-xl border border-[var(--brand-border)] bg-card px-4 py-3 text-left text-[14px] text-foreground transition-colors hover:bg-[var(--brand-cream)] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {s}
-                    </button>
+                    </motion.button>
                 ))}
-            </div>
+            </motion.div>
         </div>
     );
 }

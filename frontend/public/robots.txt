@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /register
+
+# App routes are behind auth — let search engines skip them
+Disallow: /chat
+Disallow: /chat/
+Disallow: /dashboard
+Disallow: /appeals
+Disallow: /settings
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://bereg.website/sitemap.xml

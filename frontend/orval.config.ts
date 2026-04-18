@@ -1,7 +1,7 @@
 import { defineConfig } from 'orval'
 
 export default defineConfig({
-  pulsar: {
+  Admin: {
     input: './public/openapi.json',
     output: {
       mode: 'tags-split',

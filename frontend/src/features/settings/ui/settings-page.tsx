@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { PencilSquareIcon } from "@heroicons/react/24/solid";
-import { InformationCircleIcon, ChatBubbleLeftRightIcon, AdjustmentsHorizontalIcon, CircleStackIcon } from "@heroicons/react/24/solid";
 import { useQueryClient } from "@tanstack/react-query";
+import { CheckIcon } from "@heroicons/react/24/solid";
 
 import {
     useGetSettingsApiV1AdminSettingsGet as useGetSettings,
@@ -10,16 +9,12 @@ import {
 } from "@/lib/api/generated/admin-settings/admin-settings";
 import type { AssistantSettingsResponse as AssistantSettings } from "@/lib/api/generated/schemas";
 import { Input } from "@/shared/ui/input";
-import { Skeleton } from "@/shared/ui/skeleton";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from "@/shared/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useSnackbar } from "@/hooks/use-snackbar";
 
-function formInitial(settings: AssistantSettings | undefined): AssistantSettings {
+function formInitial(
+    settings: AssistantSettings | undefined,
+): AssistantSettings {
     return {
         tone_of_voice: settings?.tone_of_voice ?? "",
         confidence_threshold: settings?.confidence_threshold ?? 0.5,
@@ -40,20 +35,19 @@ export function SettingsPage() {
     const [form, setForm] = useState<AssistantSettings>(() =>
         formInitial(settings),
     );
-    const [editingTone, setEditingTone] = useState(false);
+    const [isDirty, setIsDirty] = useState(false);
 
     useEffect(() => {
-        if (settings) {
+        if (settings && !isDirty) {
             setForm(formInitial(settings));
         }
-    }, [settings]);
+    }, [settings, isDirty]);
 
     const updateMutation = useUpdateSettings({
         mutation: {
             onSuccess: () => {
                 show("Настройки сохранены");
                 qc.invalidateQueries({ queryKey: getGetSettingsQueryKey() });
-                setEditingTone(false);
             },
             onError: (err) => {
                 showError(
@@ -65,238 +59,260 @@ export function SettingsPage() {
         },
     });
 
-    const save = (next: AssistantSettings) => {
-        updateMutation.mutate({ data: next });
-    };
+    useEffect(() => {
+        if (!isDirty) return;
+        const timer = setTimeout(() => {
+            updateMutation.mutate({ data: form });
+            setIsDirty(false);
+        }, 1000);
+        return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [form, isDirty]);
 
     const setUseArticles = (value: boolean) => {
         const next = { ...form, use_articles: value };
         setForm(next);
-        save(next);
+        updateMutation.mutate({ data: next });
+        setIsDirty(false);
     };
+
+    const saveBadge = (() => {
+        if (updateMutation.isPending) {
+            return (
+                <span className="inline-flex items-center gap-1.5 text-[12px] text-[var(--brand-text-dim)]">
+                    <span className="size-1.5 animate-pulse rounded-full bg-[var(--brand-accent)]" />
+                    Сохраняем…
+                </span>
+            );
+        }
+        if (isDirty) {
+            return (
+                <span className="inline-flex items-center gap-1.5 text-[12px] text-[var(--brand-text-dim)]">
+                    <span className="size-1.5 rounded-full bg-amber-400" />
+                    Несохранённые изменения
+                </span>
+            );
+        }
+        if (updateMutation.isSuccess) {
+            return (
+                <span className="inline-flex items-center gap-1.5 text-[12px] text-emerald-600">
+                    <CheckIcon className="size-3.5" />
+                    Сохранено
+                </span>
+            );
+        }
+        return null;
+    })();
 
     if (settingsQuery.isLoading) {
         return (
-            <div className="flex flex-col gap-6 p-6 md:p-10 max-w-[1400px] w-full mx-auto">
-                <Skeleton className="h-12 w-40" />
-                <Skeleton className="h-24 w-full rounded-2xl" />
-                <div className="grid grid-cols-3 gap-4">
-                    <Skeleton className="h-16 rounded-xl" />
-                    <Skeleton className="h-16 rounded-xl" />
-                    <Skeleton className="h-16 rounded-xl" />
+            <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 p-6 md:p-10">
+                <div className="flex flex-col gap-2">
+                    <div className="h-8 w-40 animate-shimmer rounded-md" />
+                    <div className="h-5 w-80 animate-shimmer rounded-md" />
                 </div>
+                <div className="h-[600px] max-w-[820px] animate-shimmer rounded-2xl" />
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col gap-8 p-6 md:p-10 max-w-[1400px] w-full mx-auto animate-fade-in-up">
-            <div className="flex flex-col gap-2">
-                <h1 className="text-2xl font-semibold text-foreground">Настройка</h1>
-                <p className="text-sm text-muted-foreground">
-                    Управление поведением и параметрами AI-ассистента
+        <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 p-6 md:p-10">
+            <header className="flex flex-col gap-1">
+                <div className="flex flex-wrap items-center gap-3">
+                    <h1 className="font-heading text-3xl font-semibold tracking-tight text-[var(--brand-ink)] md:text-[34px]">
+                        Настройки
+                    </h1>
+                    {saveBadge}
+                </div>
+                <p className="text-[14px] text-[var(--brand-text-dim)]">
+                    Управление поведением и параметрами AI-ассистента.
                 </p>
-            </div>
+            </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 flex flex-col gap-6">
-                    {/* Tone of voice */}
-                    <section className="flex flex-col gap-4 bg-card rounded-2xl p-6 ring-1 ring-border shadow-sm">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                                    <ChatBubbleLeftRightIcon className="size-5" />
-                                </div>
-                                <div className="flex flex-col">
-                                    <h2 className="text-base font-medium text-foreground">
-                                        Tone of Voice
-                                    </h2>
-                                    <p className="text-xs text-muted-foreground">
-                                        Инструкция для формирования стиля ответов
-                                    </p>
-                                </div>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    if (editingTone) {
-                                        save(form);
-                                    } else {
-                                        setEditingTone(true);
-                                    }
-                                }}
-                                disabled={updateMutation.isPending}
-                                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-navy-800 transition-colors disabled:opacity-50"
-                            >
-                                {editingTone ? "Сохранить" : "Изменить"}
-                                <PencilSquareIcon className="size-4" />
-                            </button>
-                        </div>
-                        <div className="relative">
-                            <textarea
-                                id="tone"
-                                value={form.tone_of_voice}
-                                onChange={(e) =>
-                                    setForm((s) => ({ ...s, tone_of_voice: e.target.value }))
-                                }
-                                placeholder="Пиши в дружелюбном стиле, но без понебратства"
-                                disabled={!editingTone || updateMutation.isPending}
-                                className={cn(
-                                    "w-full min-h-[120px] resize-none rounded-xl p-4 text-[15px] leading-relaxed transition-colors",
-                                    editingTone 
-                                        ? "bg-background ring-1 ring-border focus:ring-2 focus:ring-primary outline-none" 
-                                        : "bg-secondary/50 text-muted-foreground cursor-default outline-none"
-                                )}
-                            />
-                        </div>
-                    </section>
+            <div className="flex max-w-[820px] flex-col gap-8 rounded-2xl border border-[var(--brand-border)] bg-white p-6 md:p-8">
+                {/* Tone of voice */}
+                <Section
+                    title="Tone of Voice"
+                    description="Инструкция для формирования стиля ответов."
+                >
+                    <textarea
+                        id="tone"
+                        value={form.tone_of_voice}
+                        onChange={(e) => {
+                            setForm((s) => ({
+                                ...s,
+                                tone_of_voice: e.target.value,
+                            }));
+                            setIsDirty(true);
+                        }}
+                        placeholder="Пиши дружелюбно, но без панибратства"
+                        disabled={updateMutation.isPending}
+                        className="w-full min-h-[120px] resize-none rounded-xl border border-[var(--brand-border)] bg-white px-4 py-3 text-[15px] leading-relaxed text-[var(--brand-ink)] outline-none transition-colors placeholder:text-[var(--brand-text-dim)]/60 focus:border-[var(--brand-accent)]"
+                    />
+                </Section>
 
-                    {/* Threshold / Top K */}
-                    <section className="flex flex-col gap-6 bg-card rounded-2xl p-6 ring-1 ring-border shadow-sm">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                                <AdjustmentsHorizontalIcon className="size-5" />
-                            </div>
-                            <div className="flex flex-col">
-                                <h2 className="text-base font-medium text-foreground">
-                                    Параметры генерации
-                                </h2>
-                                <p className="text-xs text-muted-foreground">
-                                    Настройка точности и вариативности ответов
-                                </p>
-                            </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <NumericField
-                                label="Порог отсечения"
-                                hint="Минимальная уверенность (0..1), чтобы ассистент ответил."
-                                value={form.confidence_threshold}
-                                min={0}
-                                max={1}
-                                step={0.01}
-                                formatDisplay={(v) => v.toFixed(2)}
-                                disabled={updateMutation.isPending}
-                                onCommit={(v) => {
-                                    const next = { ...form, confidence_threshold: v };
-                                    setForm(next);
-                                    save(next);
-                                }}
-                            />
+                <Divider />
 
-                            <NumericField
-                                label="Top K"
-                                hint="Сколько кандидатов брать из поиска."
-                                value={form.top_k}
-                                min={1}
-                                max={50}
-                                step={1}
-                                formatDisplay={(v) => String(Math.round(v))}
-                                disabled={updateMutation.isPending}
-                                onCommit={(v) => {
-                                    const next = { ...form, top_k: Math.round(v) };
-                                    setForm(next);
-                                    save(next);
-                                }}
-                            />
-                        </div>
-                    </section>
-                </div>
+                {/* Generation params */}
+                <Section
+                    title="Параметры генерации"
+                    description="Точность и вариативность ответов."
+                >
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                        <NumericField
+                            label="Порог отсечения"
+                            hint="Минимальная уверенность (0..1), чтобы ассистент ответил"
+                            value={form.confidence_threshold}
+                            min={0}
+                            max={1}
+                            formatDisplay={(v) => v.toFixed(2)}
+                            disabled={updateMutation.isPending}
+                            onCommit={(v) => {
+                                setForm((s) => ({
+                                    ...s,
+                                    confidence_threshold: v,
+                                }));
+                                setIsDirty(true);
+                            }}
+                        />
 
-                {/* Sidebar settings */}
-                <div className="flex flex-col gap-6">
-                    <section className="flex flex-col gap-4 bg-card rounded-2xl p-6 ring-1 ring-border shadow-sm">
-                        <div className="flex items-center gap-3">
-                            <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                                <CircleStackIcon className="size-5" />
-                            </div>
-                            <div className="flex flex-col">
-                                <h2 className="text-base font-medium text-foreground">
-                                    База знаний
-                                </h2>
-                            </div>
-                        </div>
-                        
-                        <div className="flex flex-col gap-3 mt-2">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-                                    <span>Использовать статьи</span>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <button
-                                                type="button"
-                                                className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-                                            >
-                                                <InformationCircleIcon className="size-4" />
-                                            </button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            Использовать базу знаний при поиске ответов.
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </div>
-                            </div>
-                            
-                            <div className="flex flex-col gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setUseArticles(true)}
-                                    disabled={updateMutation.isPending}
-                                    className={cn(
-                                        "flex items-center gap-3 p-3 rounded-xl border text-left transition-all",
-                                        form.use_articles
-                                            ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                                            : "border-border bg-background hover:border-muted-foreground/30",
-                                    )}
-                                >
-                                    <div className={cn(
-                                        "size-4 rounded-full border flex items-center justify-center shrink-0",
-                                        form.use_articles ? "border-primary" : "border-muted-foreground/40"
-                                    )}>
-                                        {form.use_articles && <div className="size-2 rounded-full bg-primary" />}
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className={cn("text-sm font-medium", form.use_articles ? "text-primary" : "text-foreground")}>
-                                            Включено
-                                        </span>
-                                        <span className="text-xs text-muted-foreground">
-                                            Ассистент ищет ответы в статьях
-                                        </span>
-                                    </div>
-                                </button>
-                                
-                                <button
-                                    type="button"
-                                    onClick={() => setUseArticles(false)}
-                                    disabled={updateMutation.isPending}
-                                    className={cn(
-                                        "flex items-center gap-3 p-3 rounded-xl border text-left transition-all",
-                                        !form.use_articles
-                                            ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                                            : "border-border bg-background hover:border-muted-foreground/30",
-                                    )}
-                                >
-                                    <div className={cn(
-                                        "size-4 rounded-full border flex items-center justify-center shrink-0",
-                                        !form.use_articles ? "border-primary" : "border-muted-foreground/40"
-                                    )}>
-                                        {!form.use_articles && <div className="size-2 rounded-full bg-primary" />}
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className={cn("text-sm font-medium", !form.use_articles ? "text-primary" : "text-foreground")}>
-                                            Выключено
-                                        </span>
-                                        <span className="text-xs text-muted-foreground">
-                                            Ответы только на базе тикетов
-                                        </span>
-                                    </div>
-                                </button>
-                            </div>
-                        </div>
-                    </section>
-                </div>
+                        <NumericField
+                            label="Top K"
+                            hint="Сколько кандидатов брать из поиска"
+                            value={form.top_k}
+                            min={1}
+                            max={50}
+                            formatDisplay={(v) => String(Math.round(v))}
+                            disabled={updateMutation.isPending}
+                            onCommit={(v) => {
+                                setForm((s) => ({
+                                    ...s,
+                                    top_k: Math.round(v),
+                                }));
+                                setIsDirty(true);
+                            }}
+                        />
+                    </div>
+                </Section>
+
+                <Divider />
+
+                {/* KB toggle */}
+                <Section
+                    title="База знаний"
+                    description="Использовать базу знаний при поиске ответов."
+                >
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <RadioCard
+                            selected={form.use_articles}
+                            onClick={() => setUseArticles(true)}
+                            title="Включено"
+                            description="Ассистент ищет ответы и в статьях KB"
+                            disabled={updateMutation.isPending}
+                        />
+                        <RadioCard
+                            selected={!form.use_articles}
+                            onClick={() => setUseArticles(false)}
+                            title="Выключено"
+                            description="Только история обращений"
+                            disabled={updateMutation.isPending}
+                        />
+                    </div>
+                </Section>
             </div>
         </div>
+    );
+}
+
+/* ─── Sub-components ─── */
+
+function Section({
+    title,
+    description,
+    children,
+}: {
+    title: string;
+    description?: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <section className="flex flex-col gap-4">
+            <div className="flex flex-col">
+                <h2 className="font-heading text-[16px] font-semibold text-[var(--brand-ink)]">
+                    {title}
+                </h2>
+                {description && (
+                    <p className="text-[13px] text-[var(--brand-text-dim)]">
+                        {description}
+                    </p>
+                )}
+            </div>
+            {children}
+        </section>
+    );
+}
+
+function Divider() {
+    return <div className="h-px w-full bg-[var(--brand-border)]" />;
+}
+
+interface RadioCardProps {
+    selected: boolean;
+    onClick: () => void;
+    title: string;
+    description: string;
+    disabled?: boolean;
+}
+
+function RadioCard({
+    selected,
+    onClick,
+    title,
+    description,
+    disabled,
+}: RadioCardProps) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            disabled={disabled}
+            className={cn(
+                "flex items-start gap-3 rounded-xl border p-4 text-left transition-colors",
+                selected
+                    ? "border-[var(--brand-accent)] bg-[var(--brand-accent-soft)]"
+                    : "border-[var(--brand-border)] bg-white hover:border-[var(--brand-sage-deep)]",
+                disabled && "cursor-not-allowed opacity-60",
+            )}
+        >
+            <span
+                className={cn(
+                    "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border",
+                    selected
+                        ? "border-[var(--brand-accent)]"
+                        : "border-[var(--brand-border)]",
+                )}
+            >
+                {selected && (
+                    <span className="size-2 rounded-full bg-[var(--brand-accent)]" />
+                )}
+            </span>
+            <span className="flex flex-col">
+                <span
+                    className={cn(
+                        "text-[14px] font-medium",
+                        selected
+                            ? "text-[var(--brand-accent-deep)]"
+                            : "text-[var(--brand-ink)]",
+                    )}
+                >
+                    {title}
+                </span>
+                <span className="text-[12px] text-[var(--brand-text-dim)]">
+                    {description}
+                </span>
+            </span>
+        </button>
     );
 }
 
@@ -306,7 +322,6 @@ interface NumericFieldProps {
     value: number;
     min: number;
     max: number;
-    step: number;
     disabled?: boolean;
     formatDisplay: (v: number) => string;
     onCommit: (v: number) => void;
@@ -318,7 +333,6 @@ function NumericField({
     value,
     min,
     max,
-    step,
     disabled,
     formatDisplay,
     onCommit,
@@ -332,59 +346,62 @@ function NumericField({
         }
     }, [value, editing, formatDisplay]);
 
-    const commit = () => {
-        const parsed = Number(draft.replace(",", "."));
-        if (Number.isNaN(parsed)) {
-            setDraft(formatDisplay(value));
-            setEditing(false);
+    const commit = (currentDraft: string) => {
+        const parsed = Number(currentDraft.replace(",", "."));
+        if (Number.isNaN(parsed) || currentDraft.trim() === "") {
             return;
         }
         const clamped = Math.min(max, Math.max(min, parsed));
         onCommit(clamped);
-        setEditing(false);
     };
+
+    useEffect(() => {
+        if (editing) {
+            const timer = setTimeout(() => {
+                commit(draft);
+            }, 750);
+            return () => clearTimeout(timer);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [draft, editing]);
 
     return (
         <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <span>{label}</span>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <button
-                            type="button"
-                            className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-                        >
-                            <InformationCircleIcon className="size-4" />
-                        </button>
-                    </TooltipTrigger>
-                    <TooltipContent>{hint}</TooltipContent>
-                </Tooltip>
-            </div>
-            <div className="relative">
-                <Input
-                    inputMode="decimal"
-                    disabled={disabled}
-                    value={editing ? draft : formatDisplay(value)}
-                    onFocus={() => setEditing(true)}
-                    onBlur={commit}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                            e.currentTarget.blur();
-                        }
-                        if (e.key === "Escape") {
-                            setDraft(formatDisplay(value));
-                            setEditing(false);
-                            e.currentTarget.blur();
-                        }
-                    }}
-                    onChange={(e) => setDraft(e.target.value)}
-                    className="h-14 bg-card pr-12"
-                />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 pointer-events-none text-xs">
-                    {min.toString()}–{max.toString()}
-                    <span className="sr-only">{step}</span>
+            <div className="flex flex-col gap-0.5">
+                <div className="flex items-center gap-2">
+                    <span className="text-[14px] font-medium text-[var(--brand-ink)]">
+                        {label}
+                    </span>
+                    <span className="inline-flex items-center rounded-md !border border-[var(--brand-border)] bg-[var(--brand-cream)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--brand-text-dim)]">
+                        {min}–{max}
+                    </span>
                 </div>
+                <span className="text-[12px] text-[var(--brand-text-dim)]">
+                    {hint}
+                </span>
             </div>
+            <Input
+                inputMode="decimal"
+                disabled={disabled}
+                value={editing ? draft : formatDisplay(value)}
+                onFocus={() => setEditing(true)}
+                onBlur={() => {
+                    commit(draft);
+                    setEditing(false);
+                }}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                        e.currentTarget.blur();
+                    }
+                    if (e.key === "Escape") {
+                        setDraft(formatDisplay(value));
+                        setEditing(false);
+                        e.currentTarget.blur();
+                    }
+                }}
+                onChange={(e) => setDraft(e.target.value)}
+                className="h-11 !border border-[var(--brand-border)] bg-white focus:border-[var(--brand-accent)]"
+            />
         </div>
     );
 }

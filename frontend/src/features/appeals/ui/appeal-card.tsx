@@ -1,4 +1,10 @@
-import { ArrowRightIcon, XMarkIcon } from "@heroicons/react/24/solid";
+import {
+    ArrowRightIcon,
+    ChatBubbleLeftRightIcon,
+    ClockIcon,
+    UserCircleIcon,
+    XMarkIcon,
+} from "@heroicons/react/24/solid";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/lib/utils";
 import type { AppealListItemResponse as AppealListItem } from "@/lib/api/generated/schemas";
@@ -32,12 +38,19 @@ export function AppealCard({
     const isClosed = item.status === AppealStatus.closed;
 
     return (
-        <div className="group rounded-2xl bg-card p-5 md:p-6 shadow-card transition-shadow hover:shadow-pop">
+        <div
+            className={cn(
+                "group relative rounded-2xl border bg-white p-5 transition-colors md:p-6",
+                "border-[var(--brand-border)] hover:border-[var(--brand-sage-deep)]",
+                isClosed && "opacity-80",
+            )}
+        >
             <div className="flex flex-col gap-4">
+                {/* Top row: badges */}
                 <div className="flex flex-wrap items-center gap-2">
                     <span
                         className={cn(
-                            "inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium",
+                            "inline-flex items-center rounded-full px-2.5 py-1 text-[12px] font-semibold tracking-wide",
                             PRIORITY_BADGE[item.priority],
                         )}
                     >
@@ -45,45 +58,56 @@ export function AppealCard({
                     </span>
                     <span
                         className={cn(
-                            "inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium",
+                            "inline-flex items-center rounded-full px-2.5 py-1 text-[12px] font-semibold tracking-wide",
                             STATUS_BADGE[item.status],
                         )}
                     >
                         {statusLabel(item.status)}
                     </span>
-                    <span className="inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium bg-accent text-accent-foreground">
-                        {item.category || "—"}
+                    <span className="inline-flex items-center rounded-full border border-[var(--brand-border)] bg-[var(--brand-cream)] px-2.5 py-1 text-[12px] font-medium text-[var(--brand-text-dim)]">
+                        {item.category || "Без категории"}
                     </span>
                     {item.csat !== null && (
-                        <span className="inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium bg-secondary text-secondary-foreground">
-                            CSAT {item.csat.toFixed(1)}
+                        <span className="inline-flex items-center gap-1 rounded-full border border-[var(--brand-border)] bg-white px-2.5 py-1 text-[12px] font-medium text-[var(--brand-text)]">
+                            CSAT
+                            <span className="font-semibold text-[var(--brand-ink)]">
+                                {item.csat.toFixed(1)}
+                            </span>
                         </span>
                     )}
                 </div>
 
-                <div className="flex flex-wrap items-end gap-4 justify-between">
-                    <div className="flex flex-col gap-1 min-w-0">
-                        <span className="text-[15px] font-medium text-foreground truncate">
-                            {item.employee_login}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                            {formatProcessingDuration(
-                                item.processing_duration_minutes,
-                            )}
-                            {isClosed
-                                ? " до закрытия"
-                                : " с начала запроса"}
-                        </span>
+                {/* Bottom row: employee + actions */}
+                <div className="flex flex-wrap items-end justify-between gap-4">
+                    <div className="flex min-w-0 flex-col gap-1">
+                        <div className="flex items-center gap-1.5 text-[15px] font-medium text-[var(--brand-ink)]">
+                            <UserCircleIcon className="size-4 text-[var(--brand-text-dim)]" />
+                            <span className="truncate">
+                                {item.employee_login}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[13px] text-[var(--brand-text-dim)]">
+                            <ClockIcon className="size-3.5" />
+                            <span>
+                                {formatProcessingDuration(
+                                    item.processing_duration_minutes,
+                                )}
+                                {isClosed
+                                    ? " до закрытия"
+                                    : " с момента создания"}
+                            </span>
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-2 ml-auto">
+                    <div className="ml-auto flex flex-wrap items-center gap-2">
                         {!isClosed && (
                             <Button
                                 variant="outline"
                                 onClick={onClose}
                                 disabled={isClosing}
+                                className="border-[var(--brand-border)] bg-white text-[var(--brand-text)] hover:bg-[var(--brand-cream)]"
                             >
-                                Закрыть обращение
+                                Закрыть
                                 <XMarkIcon className="size-4" />
                             </Button>
                         )}
@@ -91,7 +115,7 @@ export function AppealCard({
                             <Button
                                 onClick={onTake}
                                 disabled={isTaking}
-                                className="bg-primary hover:bg-navy-800"
+                                className="bg-[var(--brand-dark)] text-white hover:bg-[var(--brand-dark-2)]"
                             >
                                 Взять в работу
                                 <ArrowRightIcon className="size-4" />
@@ -100,10 +124,10 @@ export function AppealCard({
                         {!isOpen && !isClosed && (
                             <Button
                                 onClick={onGoToChat}
-                                className="bg-primary hover:bg-navy-800"
+                                className="bg-[var(--brand-dark)] text-white hover:bg-[var(--brand-dark-2)]"
                             >
                                 К чату
-                                <ArrowRightIcon className="size-4" />
+                                <ChatBubbleLeftRightIcon className="size-4" />
                             </Button>
                         )}
                     </div>

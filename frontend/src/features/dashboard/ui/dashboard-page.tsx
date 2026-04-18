@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { motion } from "framer-motion";
 import {
     Area,
     AreaChart,
@@ -9,6 +8,7 @@ import {
     XAxis,
     YAxis,
 } from "recharts";
+import { ChartBarIcon } from "@heroicons/react/24/solid";
 
 import {
     useSummaryApiV1AdminDashboardSummaryGet as useGetDashboardSummary,
@@ -22,6 +22,7 @@ import {
     StatCard,
 } from "@/features/dashboard/ui/dashboard-components";
 import { Route as DashboardRoute } from "@/routes/_app.dashboard";
+import { motion, staggerContainerDelayed } from "@/shared/animations/motion";
 
 const PERIOD_LABELS: Record<string, string> = {
     "1h": "1ч",
@@ -46,19 +47,26 @@ function isPeriod(value: string | undefined): value is Period {
 }
 
 function formatDuration(minutes: number): string {
-    if (minutes < 60) return `${Math.round(minutes)} мин.`;
+    if (!Number.isFinite(minutes)) return "—";
+    if (minutes < 60) return `${Math.round(minutes)} мин`;
     const hours = minutes / 60;
-    return `${hours.toFixed(1)} ч.`;
+    return `${hours.toFixed(1)} ч`;
 }
 
 function formatRate(rate: number): string {
     return `${Math.round(rate * 100)}%`;
 }
 
+function healthLabel(status: "healthy" | "degraded" | "down"): string {
+    if (status === "healthy") return "Работает";
+    if (status === "degraded") return "Нестабильно";
+    return "Недоступен";
+}
+
 export function DashboardPage() {
     const search = DashboardRoute.useSearch();
     const navigate = DashboardRoute.useNavigate();
-    const period: Period = isPeriod(search.period) ? search.period : "7d";
+    const period: Period = isPeriod(search.period) ? search.period : "24h";
 
     const summaryQuery = useGetDashboardSummary({ period });
     const tsQuery = useGetMessagesTimeseries({ period });
@@ -85,42 +93,57 @@ export function DashboardPage() {
     };
 
     return (
-        <div className="flex flex-col gap-8 p-6 md:p-10 max-w-[1400px] w-full mx-auto animate-fade-in-up">
-            <section className="flex flex-col gap-4">
-                <h2 className="text-sm uppercase tracking-wider text-muted-foreground font-medium">
+        <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-8 p-6 md:p-10">
+            {/* Header */}
+            <header className="flex flex-col gap-1">
+                <h1 className="font-heading text-3xl font-semibold tracking-tight text-[var(--brand-ink)] md:text-[34px]">
+                    Дашборд
+                </h1>
+            </header>
+
+            {/* Stat cards */}
+            <motion.section
+                variants={staggerContainerDelayed(0.04, 0)}
+                initial="hidden"
+                animate="show"
+                className="flex flex-col gap-4"
+            >
+                <h2 className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--brand-text-dim)]">
                     Состояние платформы
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     <StatCard
                         title="Статус"
-                        hint="Общий статус платформы"
+                        hint="Общий статус платформы и ассистента"
                         loading={summaryQuery.isLoading}
                         value={
-                            <div className="flex items-center gap-2 capitalize">
+                            <div className="flex items-center gap-2">
                                 {summary && (
                                     <HealthIndicator status={summary.health} />
                                 )}
-                                <span className="text-foreground">
-                                    {summary ? healthLabel(summary.health) : ""}
+                                <span>
+                                    {summary
+                                        ? healthLabel(summary.health)
+                                        : "—"}
                                 </span>
                             </div>
                         }
                     />
                     <StatCard
-                        title="Обращений"
-                        hint="Кол-во открытых заявок"
+                        title="Открытые обращения"
+                        hint="Заявки в статусе «Открыто»"
                         loading={summaryQuery.isLoading}
                         value={summary?.open_appeals_count ?? "—"}
                     />
                     <StatCard
-                        title="Обращений в работе"
-                        hint="Кол-во заявок в работе"
+                        title="Обращения в работе"
+                        hint="Взятые оператором в обработку"
                         loading={summaryQuery.isLoading}
                         value={summary?.in_progress_appeals_count ?? "—"}
                     />
                     <StatCard
                         title="Доля ассистента"
-                        hint="Доля закрытых заявок ассистентом"
+                        hint="Доля обращений, которые закрыл ассистент без оператора"
                         loading={summaryQuery.isLoading}
                         value={
                             summary
@@ -130,7 +153,7 @@ export function DashboardPage() {
                     />
                     <StatCard
                         title="Время решения"
-                        hint="Ср. время решения обращений"
+                        hint="Среднее время от создания до закрытия"
                         loading={summaryQuery.isLoading}
                         value={
                             summary
@@ -140,7 +163,7 @@ export function DashboardPage() {
                     />
                     <StatCard
                         title="CSAT"
-                        hint="Индекс удовлетворённости ответами"
+                        hint="Среднее пользовательское удовлетворение (1–5)"
                         loading={summaryQuery.isLoading}
                         value={
                             summary?.csat_avg !== null &&
@@ -150,60 +173,38 @@ export function DashboardPage() {
                         }
                     />
                 </div>
-            </section>
+            </motion.section>
 
-            <section className="rounded-2xl bg-card p-6 md:p-7 shadow-card">
-                <div className="flex items-center justify-between gap-4 flex-wrap mb-6">
+            {/* Chart */}
+            <section className="rounded-2xl border border-[var(--brand-border)] bg-white p-6 md:p-7">
+                <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
                     <div>
-                        <h3 className="text-lg font-semibold text-foreground">
+                        <h2 className="font-heading text-[18px] font-semibold tracking-tight text-[var(--brand-ink)]">
                             Обработка обращений
-                        </h3>
-                        {timeseries && (
-                            <p className="text-sm text-muted-foreground mt-1">
-                                Всего за период: {timeseries.total_messages}
-                            </p>
-                        )}
+                        </h2>
+                        <p className="mt-1 text-[13px] text-[var(--brand-text-dim)]">
+                            Всего за период:{" "}
+                            {timeseries ? (
+                                <span className="font-semibold text-[var(--brand-ink)]">
+                                    {timeseries.total_messages}
+                                </span>
+                            ) : (
+                                "—"
+                            )}
+                        </p>
                     </div>
-                    <div className="inline-flex items-center gap-1 p-1 bg-card rounded-xl ring-1 ring-border shadow-sm relative">
-                        {PERIOD_ORDER.map((p) => {
-                            const isActive = period === p;
-                            return (
-                                <button
-                                    key={p}
-                                    type="button"
-                                    onClick={() => setPeriod(p)}
-                                    className={cn(
-                                        "relative px-3 py-1.5 rounded-lg text-sm font-medium transition-colors z-10",
-                                        isActive
-                                            ? "text-primary-foreground"
-                                            : "text-muted-foreground hover:text-foreground",
-                                    )}
-                                >
-                                    {isActive && (
-                                        <motion.div
-                                            layoutId="dashboard-period"
-                                            className="absolute inset-0 bg-primary rounded-lg -z-10"
-                                            transition={{
-                                                type: "spring",
-                                                bounce: 0.2,
-                                                duration: 0.6,
-                                            }}
-                                        />
-                                    )}
-                                    {PERIOD_LABELS[p]}
-                                </button>
-                            );
-                        })}
-                    </div>
+                    <PeriodSwitcher
+                        value={period}
+                        options={PERIOD_ORDER}
+                        onChange={setPeriod}
+                    />
                 </div>
 
                 <div className="h-[320px]">
                     {tsQuery.isLoading ? (
                         <Skeleton className="h-full w-full rounded-xl" />
                     ) : chartData.length === 0 ? (
-                        <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
-                            Нет данных за выбранный период
-                        </div>
+                        <ChartEmpty />
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart
@@ -225,30 +226,30 @@ export function DashboardPage() {
                                     >
                                         <stop
                                             offset="0%"
-                                            stopColor="#152b52"
-                                            stopOpacity={0.25}
+                                            stopColor="#3361ff"
+                                            stopOpacity={0.35}
                                         />
                                         <stop
                                             offset="100%"
-                                            stopColor="#152b52"
+                                            stopColor="#3361ff"
                                             stopOpacity={0}
                                         />
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid
                                     strokeDasharray="3 3"
-                                    stroke="#e3e7ed"
+                                    stroke="#e5ebf3"
                                     vertical={false}
                                 />
                                 <XAxis
                                     dataKey="label"
-                                    stroke="#9aa3b3"
+                                    stroke="#8892ab"
                                     fontSize={11}
                                     tickLine={false}
                                     axisLine={false}
                                 />
                                 <YAxis
-                                    stroke="#9aa3b3"
+                                    stroke="#8892ab"
                                     fontSize={11}
                                     tickLine={false}
                                     axisLine={false}
@@ -257,24 +258,34 @@ export function DashboardPage() {
                                 <RechartsTooltip
                                     contentStyle={{
                                         background: "#ffffff",
-                                        border: "1px solid #e3e7ed",
-                                        borderRadius: 8,
-                                        boxShadow:
-                                            "0 4px 12px rgba(21,43,82,0.08)",
+                                        border: "1px solid #d5dce8",
+                                        borderRadius: 10,
                                         fontSize: 12,
+                                        padding: "8px 10px",
                                     }}
                                     labelStyle={{
-                                        color: "#6b7584",
+                                        color: "#5a6378",
                                         marginBottom: 4,
+                                    }}
+                                    cursor={{
+                                        stroke: "#c5d1ff",
+                                        strokeWidth: 1.5,
                                     }}
                                 />
                                 <Area
                                     type="monotone"
                                     dataKey="messages_count"
-                                    stroke="#152b52"
-                                    strokeWidth={2}
+                                    stroke="#3361ff"
+                                    strokeWidth={2.5}
                                     fill="url(#msgGradient)"
                                     animationDuration={600}
+                                    dot={false}
+                                    activeDot={{
+                                        r: 5,
+                                        fill: "#3361ff",
+                                        stroke: "#ffffff",
+                                        strokeWidth: 2,
+                                    }}
                                 />
                             </AreaChart>
                         </ResponsiveContainer>
@@ -285,8 +296,60 @@ export function DashboardPage() {
     );
 }
 
-function healthLabel(status: "healthy" | "degraded" | "down"): string {
-    if (status === "healthy") return "Healthy";
-    if (status === "degraded") return "Degraded";
-    return "Down";
+/* ─── Sub-components ─── */
+
+interface PeriodSwitcherProps {
+    value: Period;
+    options: Period[];
+    onChange: (next: Period) => void;
+}
+
+function PeriodSwitcher({ value, options, onChange }: PeriodSwitcherProps) {
+    return (
+        <div className="relative inline-flex items-center gap-1 rounded-xl border border-[var(--brand-border)] bg-white p-1">
+            {options.map((p) => {
+                const isActive = value === p;
+                return (
+                    <button
+                        key={p}
+                        type="button"
+                        onClick={() => onChange(p)}
+                        className={cn(
+                            "relative z-10 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors",
+                            isActive
+                                ? "text-white"
+                                : "text-[var(--brand-text-dim)] hover:text-[var(--brand-ink)]",
+                        )}
+                    >
+                        {isActive && (
+                            <motion.div
+                                layoutId="dashboard-period"
+                                className="absolute inset-0 -z-10 rounded-lg bg-[var(--brand-dark)]"
+                                transition={{
+                                    type: "spring",
+                                    bounce: 0.18,
+                                    duration: 0.45,
+                                }}
+                            />
+                        )}
+                        {PERIOD_LABELS[p]}
+                    </button>
+                );
+            })}
+        </div>
+    );
+}
+
+function ChartEmpty() {
+    return (
+        <div className="flex h-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--brand-border)] bg-[var(--brand-cream)] text-center">
+            <ChartBarIcon className="size-8 text-[var(--brand-text-dim)]/40" />
+            <p className="text-[14px] font-medium text-[var(--brand-text-dim)]">
+                Нет данных за выбранный период
+            </p>
+            <p className="text-[12px] text-[var(--brand-text-dim)]/70">
+                Попробуйте увеличить диапазон сверху
+            </p>
+        </div>
+    );
 }

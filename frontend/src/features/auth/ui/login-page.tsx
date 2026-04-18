@@ -2,26 +2,44 @@ import { useState, type FormEvent } from "react";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { ArrowRightIcon } from "@heroicons/react/24/solid";
 
-import { useLoginApiV1AdminAuthLoginPost } from "@/lib/api/generated/admin-auth/admin-auth";
-import { Input } from "@/shared/ui/input";
+import { useLoginApiV1ClientAuthLoginPost } from "@/lib/api/generated/client-auth/client-auth";
 import { Button } from "@/shared/ui/button";
 import { Spinner } from "@/shared/ui/spinner";
-import { setToken } from "@/lib/auth";
+import { FloatingInput } from "@/shared/ui/floating-input";
+import { setToken, setRole } from "@/lib/auth";
 import { useSnackbar } from "@/hooks/use-snackbar";
 import { ApiError } from "@/lib/api/client";
+import { AuthShell } from "./auth-shell";
+import { validateEmail, validatePassword } from "../lib/validate";
+import {
+    motion,
+    blurFadeUp,
+    scaleFadeIn,
+    springPop,
+    staggerContainerDelayed,
+    fadeIn,
+} from "@/shared/animations/motion";
+
+type Touched = { email: boolean; password: boolean };
 
 export function LoginPage() {
     const navigate = useNavigate();
     const { showError } = useSnackbar();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [touched, setTouched] = useState<Touched>({
+        email: false,
+        password: false,
+    });
+    const [submitAttempted, setSubmitAttempted] = useState(false);
 
-    const loginMutation = useLoginApiV1AdminAuthLoginPost({
+    const loginMutation = useLoginApiV1ClientAuthLoginPost({
         mutation: {
             onSuccess: (res) => {
                 if (res.status === 200) {
                     setToken(res.data.access_token);
-                    navigate({ to: "/dashboard" });
+                    setRole("client");
+                    navigate({ to: "/chat" });
                 }
             },
             onError: (err) => {
@@ -38,92 +56,77 @@ export function LoginPage() {
         },
     });
 
-    const disabled =
-        loginMutation.isPending || email.trim() === "" || password === "";
+    const emailError = validateEmail(email);
+    const passwordError = validatePassword(password);
+    const showEmailError =
+        (touched.email || submitAttempted) && emailError !== null;
+    const showPasswordError =
+        (touched.password || submitAttempted) && passwordError !== null;
 
     const onSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (disabled) return;
+        setSubmitAttempted(true);
+        if (loginMutation.isPending) return;
+        if (emailError || passwordError) return;
         loginMutation.mutate({ data: { email: email.trim(), password } });
     };
 
     return (
-        <div className="min-h-svh grid lg:grid-cols-[minmax(0,1fr)_minmax(560px,0.85fr)]">
-            {/* Left brand panel */}
-            <div className="relative hidden lg:flex items-center justify-start overflow-hidden bg-background">
-                <img
-                    src="/images/layout/login-bg.png"
-                    alt=""
-                    className="h-full w-auto object-cover"
-                    onError={(e) => {
-                        e.currentTarget.style.display = "none";
-                    }}
-                />
-            </div>
+        <AuthShell>
+            <motion.form
+                onSubmit={onSubmit}
+                className="w-full max-w-md space-y-7"
+                noValidate
+                variants={staggerContainerDelayed(0.08, 0.05)}
+                initial="hidden"
+                animate="show"
+            >
+                <motion.div variants={scaleFadeIn} className="space-y-2">
+                    <h1 className="text-3xl font-semibold text-foreground">
+                        Вход
+                    </h1>
+                    <p className="text-sm text-muted-foreground">
+                        Войдите, чтобы перейти в чат с ассистентом.
+                    </p>
+                </motion.div>
 
-            {/* Right form panel */}
-            <div className="flex items-center justify-center px-6 sm:px-16 py-10 bg-background">
-                <form
-                    onSubmit={onSubmit}
-                    className="w-full max-w-md space-y-7 animate-fade-in-up"
-                    noValidate
-                >
-                    <div className="space-y-2">
-                        <h1 className="text-3xl font-semibold text-foreground">
-                            Вход
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            Войдите, чтобы перейти к админке и чату ассистента.
-                        </p>
-                    </div>
+                <motion.div variants={blurFadeUp} className="space-y-4">
+                    <FloatingInput
+                        id="login-email"
+                        label="Email"
+                        type="email"
+                        autoComplete="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        onBlur={() =>
+                            setTouched((t) => ({ ...t, email: true }))
+                        }
+                        disabled={loginMutation.isPending}
+                        error={showEmailError ? emailError : null}
+                    />
+                    <FloatingInput
+                        id="login-password"
+                        label="Пароль"
+                        type="password"
+                        autoComplete="current-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        onBlur={() =>
+                            setTouched((t) => ({ ...t, password: true }))
+                        }
+                        disabled={loginMutation.isPending}
+                        error={showPasswordError ? passwordError : null}
+                    />
+                </motion.div>
 
-                    <div className="space-y-5">
-                        <div className="space-y-1.5">
-                            <label
-                                htmlFor="email"
-                                className="text-sm font-medium text-muted-foreground"
-                            >
-                                Email
-                            </label>
-                            <Input
-                                id="email"
-                                type="email"
-                                autoComplete="email"
-                                placeholder="example@bereg.ru"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                disabled={loginMutation.isPending}
-                                className="h-12"
-                            />
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <label
-                                htmlFor="password"
-                                className="text-sm font-medium text-muted-foreground"
-                            >
-                                Пароль
-                            </label>
-                            <Input
-                                id="password"
-                                type="password"
-                                autoComplete="current-password"
-                                placeholder="••••••••"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                disabled={loginMutation.isPending}
-                                className="h-12"
-                            />
-                        </div>
-                    </div>
-
+                <motion.div variants={springPop}>
                     <Button
                         type="submit"
-                        disabled={disabled}
-                        className="w-full h-12 bg-primary hover:bg-navy-800 text-primary-foreground text-base font-medium"
+                        disabled={loginMutation.isPending}
+                        className="h-12 w-full bg-primary text-base font-medium text-primary-foreground hover:bg-[var(--brand-dark-2)]"
                     >
                         {loginMutation.isPending ? (
-                            <Spinner size="sm" />
+                            <Spinner />
                         ) : (
                             <>
                                 Войти
@@ -131,18 +134,31 @@ export function LoginPage() {
                             </>
                         )}
                     </Button>
+                </motion.div>
 
-                    <div className="text-center text-sm text-muted-foreground">
+                <motion.div
+                    variants={fadeIn}
+                    className="space-y-3 text-center text-sm text-muted-foreground"
+                >
+                    <div>
                         Нет аккаунта?{" "}
                         <Link
                             to="/register"
-                            className="text-primary hover:underline font-medium"
+                            className="font-medium text-primary hover:underline"
                         >
                             Зарегистрироваться
                         </Link>
                     </div>
-                </form>
-            </div>
-        </div>
+                    <div>
+                        <Link
+                            to="/admin/login"
+                            className="text-[13px] text-muted-foreground/80 hover:text-primary hover:underline"
+                        >
+                            Войти как админ →
+                        </Link>
+                    </div>
+                </motion.div>
+            </motion.form>
+        </AuthShell>
     );
 }

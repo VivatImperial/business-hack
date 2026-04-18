@@ -2,10 +2,16 @@ import { createRouter } from "@tanstack/react-router";
 import { routerWithQueryClient } from "@tanstack/react-router-with-query";
 import { QueryClient } from "@tanstack/react-query";
 import { routeTree } from "./routeTree.gen";
+import type { AuthRole } from "@/lib/auth-role";
 
 export function getRouter() {
     const queryClient = new QueryClient({
-        defaultOptions: { queries: { staleTime: 30_000 } },
+        defaultOptions: {
+            queries: {
+                staleTime: 30_000,
+                retry: false,
+            },
+        },
     });
     return routerWithQueryClient(
         createRouter({
@@ -14,12 +20,8 @@ export function getRouter() {
             defaultPreload: "intent",
             context: {
                 queryClient,
-                tenantId: undefined as number | undefined,
                 token: undefined as string | undefined,
-                isMobile: false,
-                dismissedBanners: undefined as string | undefined,
-                sidebarTourSeen: false,
-                issuesBannerCollapsed: false,
+                role: undefined as AuthRole | undefined,
             },
         }),
         queryClient,

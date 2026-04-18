@@ -23,6 +23,22 @@ function resolveBaseUrl(): string {
 
 export const BASE_URL = resolveBaseUrl();
 
+/**
+ * Error thrown by customFetch when the API returns a non-2xx response.
+ * Carries the HTTP status so callers can branch on it (e.g. 401 vs 422).
+ */
+export class ApiError extends Error {
+    readonly status: number;
+    readonly body: unknown;
+
+    constructor(message: string, status: number, body?: unknown) {
+        super(message);
+        this.name = "ApiError";
+        this.status = status;
+        this.body = body;
+    }
+}
+
 function resolveRequestUrl(url: string): string {
     if (/^https?:\/\//i.test(url)) {
         return url;
@@ -88,31 +104,57 @@ export const customFetch = async <T>(
     });
 
     if (response.status === 401) {
-        console.log("[customFetch] 401 on:", url);
-        if (typeof document !== "undefined") {
-            const wasAdmin = Cookies.get("admin_impersonating") === "1";
-            console.log("[customFetch] clearing cookies, wasAdmin:", wasAdmin);
+        const isAuthEndpoint = /\/auth\/(login|register)/i.test(url);
+        if (typeof document !== "undefined" && !isAuthEndpoint) {
             Cookies.remove("auth_token", { path: "/" });
-            Cookies.remove("tenant_id", { path: "/" });
-            Cookies.remove("admin_impersonating", { path: "/" });
-            window.location.href = wasAdmin ? "/admin/login" : "/login";
+            Cookies.remove("auth_role", { path: "/" });
+            window.location.href = "/login";
+            throw new ApiError("Unauthorized", 401);
         }
-        throw new Error("Unauthorized");
-    }
-
-    if (!response.ok) {
+        // For /auth/login and /auth/register let the caller handle 401 via onError
         const errorBody = await response.text().catch(() => "");
+        let parsedBody: unknown = errorBody;
         let errorMessage = errorBody;
         try {
             const parsed = JSON.parse(errorBody);
-            if (parsed.detail) {
-                errorMessage = parsed.detail;
+            parsedBody = parsed;
+            if (
+                parsed &&
+                typeof parsed === "object" &&
+                "detail" in parsed &&
+                typeof (parsed as { detail: unknown }).detail === "string"
+            ) {
+                errorMessage = (parsed as { detail: string }).detail;
             }
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (e) {
             // Not JSON
         }
-        throw new Error(errorMessage || `HTTP ${response.status}`);
+        throw new ApiError(errorMessage || "Unauthorized", 401, parsedBody);
+    }
+
+    if (!response.ok) {
+        const errorBody = await response.text().catch(() => "");
+        let errorMessage = errorBody;
+        let parsedBody: unknown = errorBody;
+        try {
+            const parsed = JSON.parse(errorBody);
+            parsedBody = parsed;
+            if (parsed && typeof parsed === "object" && "detail" in parsed) {
+                const detail = (parsed as { detail: unknown }).detail;
+                if (typeof detail === "string") {
+                    errorMessage = detail;
+                }
+            }
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (e) {
+            // Not JSON
+        }
+        throw new ApiError(
+            errorMessage || `HTTP ${response.status}`,
+            response.status,
+            parsedBody,
+        );
     }
 
     const contentType = response.headers.get("content-type");

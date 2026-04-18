@@ -1,4 +1,4 @@
-# AGENTS.md — Pulsar Frontend
+# AGENTS.md — Admin Frontend
 
 Правила для React 19 + TanStack Start. Общие принципы — в корневом [`../AGENTS.md`](../AGENTS.md).
 
@@ -6,30 +6,30 @@
 
 ## 1. Что это
 
-UI CRM-системы Pulsar: дашборд, лиды, чаты, промпты, биллинг, настройки, админка, лендинг. SSR через TanStack Start + React Query, типы и хуки генерируются из backend OpenAPI через Orval.
+UI CRM-системы Admin: дашборд, лиды, чаты, промпты, биллинг, настройки, админка, лендинг. SSR через TanStack Start + React Query, типы и хуки генерируются из backend OpenAPI через Orval.
 
 ---
 
 ## 2. Стек
 
-| Категория          | Библиотеки                                                           |
-| ------------------ | -------------------------------------------------------------------- |
-| Фреймворк          | `react@19`, `@tanstack/react-start`, `vite@8`                        |
-| Роутинг            | `@tanstack/react-router`, `@tanstack/react-router-with-query`        |
-| Данные             | `@tanstack/react-query@5`, `openapi-fetch`, `orval@8`                |
-| Формы / валидация  | `react-hook-form`, `@hookform/resolvers`, `zod@4`                    |
-| Стили              | `tailwindcss@4`, `tw-animate-css`, `clsx`, `tailwind-merge`, `class-variance-authority` |
-| UI-примитивы       | `@radix-ui/*`, `radix-ui`, `@heroui/react`                           |
-| Иконки             | `@heroicons/react`, `@gravity-ui/icons`                              |
-| Анимации           | `framer-motion` (ТОЛЬКО через `@/shared/animations/motion`)          |
-| Графики            | `recharts`                                                           |
-| DnD                | `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`           |
-| Модалки            | `@ebay/nice-modal-react`                                             |
-| Хуки               | `@uidotdev/usehooks`                                                 |
-| Даты               | `dayjs`, `react-day-picker`                                          |
-| Cookies            | `js-cookie` (client), `vinxi/http` (server)                          |
-| Шрифты             | `@fontsource/inter`, `@fontsource/manrope`, `@fontsource/onest`, `@fontsource/geist-sans` |
-| Прочее             | `qrcode.react`, `dotted-map`                                         |
+| Категория         | Библиотеки                                                                                |
+| ----------------- | ----------------------------------------------------------------------------------------- |
+| Фреймворк         | `react@19`, `@tanstack/react-start`, `vite@8`                                             |
+| Роутинг           | `@tanstack/react-router`, `@tanstack/react-router-with-query`                             |
+| Данные            | `@tanstack/react-query@5`, `openapi-fetch`, `orval@8`                                     |
+| Формы / валидация | `react-hook-form`, `@hookform/resolvers`, `zod@4`                                         |
+| Стили             | `tailwindcss@4`, `tw-animate-css`, `clsx`, `tailwind-merge`, `class-variance-authority`   |
+| UI-примитивы      | `@radix-ui/*`, `radix-ui`, `@heroui/react`                                                |
+| Иконки            | `@heroicons/react`, `@gravity-ui/icons`                                                   |
+| Анимации          | `framer-motion` (ТОЛЬКО через `@/shared/animations/motion`)                               |
+| Графики           | `recharts`                                                                                |
+| DnD               | `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`                                |
+| Модалки           | `@ebay/nice-modal-react`                                                                  |
+| Хуки              | `@uidotdev/usehooks`                                                                      |
+| Даты              | `dayjs`, `react-day-picker`                                                               |
+| Cookies           | `js-cookie` (client), `vinxi/http` (server)                                               |
+| Шрифты            | `@fontsource/inter`, `@fontsource/manrope`, `@fontsource/onest`, `@fontsource/geist-sans` |
+| Прочее            | `qrcode.react`, `dotted-map`                                                              |
 
 ---
 
@@ -189,7 +189,7 @@ export const leadsMutations = {
 ## 9. Картинки
 
 - Все файлы — в [`public/images/<module>/`](public/images/) (`common`, `landing`, `dashboard`, `guide`, `leads`, `chats`, `tags`, `stories`).
-- В коде — строковые константы: `"/images/common/logo.webp"`. **ES-импорты запрещены**.
+- В коде — строковые константы: `"/images/common/logo.png"`. **ES-импорты запрещены**.
 - Неиспользуемые файлы удалять.
 - Форматы: `.webp` / `.svg` / `.avif`. PNG/JPG — только если внешний ассет без альтернативы.
 
@@ -249,21 +249,21 @@ npm run generate:api   # Orval → регенерация types + React Query ho
 
 Активно применяй:
 
-| Skill                           | Когда                                                     |
-| ------------------------------- | --------------------------------------------------------- |
-| `frontend-best-practices`       | Routing, modals, cookies, server-fns, caching             |
-| `frontend-data-layer`           | openapi-fetch, queryOptions, mutations, SSR loaders       |
+| Skill                           | Когда                                                        |
+| ------------------------------- | ------------------------------------------------------------ |
+| `frontend-best-practices`       | Routing, modals, cookies, server-fns, caching                |
+| `frontend-data-layer`           | openapi-fetch, queryOptions, mutations, SSR loaders          |
 | `frontend-hooks`                | Прежде чем писать custom hook — проверь `@uidotdev/usehooks` |
-| `frontend-types`                | Когда создаёшь / регенерируешь типы                       |
-| `frontend-view-layer`           | Структура компонентов, Tailwind, анимации                 |
-| `tanstack-query`                | Query/mutation паттерны v5                                |
-| `tanstack-router`               | Типизированный роутинг, search-params                     |
-| `tanstack-start`                | Server functions, middleware, SSR                         |
-| `tanstack-start-best-practices` | Архитектурные рекомендации для Start                       |
-| `shadcn`                        | Добавление / правка shadcn-примитивов                     |
-| `tailwind-design-system`        | Design tokens, responsive паттерны                         |
-| `frontend-design`               | Общий вкус к качественному UI                              |
-| `typescript-advanced-types`     | Сложные generics / conditional / mapped types              |
+| `frontend-types`                | Когда создаёшь / регенерируешь типы                          |
+| `frontend-view-layer`           | Структура компонентов, Tailwind, анимации                    |
+| `tanstack-query`                | Query/mutation паттерны v5                                   |
+| `tanstack-router`               | Типизированный роутинг, search-params                        |
+| `tanstack-start`                | Server functions, middleware, SSR                            |
+| `tanstack-start-best-practices` | Архитектурные рекомендации для Start                         |
+| `shadcn`                        | Добавление / правка shadcn-примитивов                        |
+| `tailwind-design-system`        | Design tokens, responsive паттерны                           |
+| `frontend-design`               | Общий вкус к качественному UI                                |
+| `typescript-advanced-types`     | Сложные generics / conditional / mapped types                |
 
 Полный список — в корневом [`../AGENTS.md`](../AGENTS.md) §9.
 

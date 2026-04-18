@@ -1,13 +1,7 @@
-import {
-    ArrowPathIcon,
-    ChatBubbleLeftRightIcon,
-} from "@heroicons/react/24/solid";
+import { ArrowPathIcon, HomeIcon } from "@heroicons/react/24/solid";
 import { useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "@tanstack/react-router";
+import { useRouter, Link } from "@tanstack/react-router";
 import { Button } from "@/shared/ui/button";
-import { MANAGER_CONTACT_URL } from "@/shared/config/contact";
-
-const TG_MANAGER = MANAGER_CONTACT_URL;
 
 export function RouteErrorFallback() {
     const queryClient = useQueryClient();
@@ -19,39 +13,42 @@ export function RouteErrorFallback() {
     };
 
     return (
-        <div className="flex flex-col h-full  md:min-h-[calc(100svh-240px)] rounded-xl bg-background p-8 relative">
-            <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-                <div className="flex flex-col items-center max-w-md">
-                    <img
-                        src="/images/errors/error-500.png"
-                        alt=""
-                        className="w-64 h-auto mb-6 drop-shadow-lg"
-                    />
-                    <h2 className="font-heading text-[20px] font-extrabold text-foreground mb-1.5 tracking-tight">
-                        Не удалось загрузить страницу
-                    </h2>
-                    <p className="text-[14px] text-muted-foreground leading-relaxed mb-6 max-w-xs">
-                        Мы уже знаем о проблеме и скоро её починим. Попробуйте
-                        обновить или напишите менеджеру.
-                    </p>
-                    <div className="flex items-center gap-3">
+        <div className="flex h-full min-h-[60svh] flex-col items-center justify-center bg-background p-8 text-center">
+            <div className="flex max-w-md flex-col items-center">
+                <div className="mb-6 flex size-20 items-center justify-center rounded-full border border-[var(--brand-border)] bg-[var(--brand-cream)] text-[32px] font-semibold text-[var(--brand-dark)]">
+                    500
+                </div>
+                <h2 className="font-heading mb-2 text-[20px] font-semibold tracking-tight text-[var(--brand-dark)]">
+                    Не удалось загрузить страницу
+                </h2>
+                <p className="mb-6 max-w-sm text-[14px] leading-relaxed text-[var(--brand-text)]">
+                    Что-то пошло не так. Попробуйте обновить — если проблема
+                    повторится, напишите на{" "}
+                    <a
+                        href="mailto:it@baltbereg.ru"
+                        className="font-medium text-[var(--brand-dark)] underline underline-offset-2"
+                    >
+                        it@baltbereg.ru
+                    </a>
+                    .
+                </p>
+                <div className="flex items-center gap-2">
+                    <Button
+                        onClick={handleRetry}
+                        className="h-10 cursor-pointer rounded-md border border-[var(--brand-dark)] bg-[var(--brand-dark)] px-5 text-[14px] font-medium text-white transition-colors hover:bg-[var(--brand-dark-2)]"
+                    >
+                        <ArrowPathIcon className="mr-1.5 size-4" />
+                        Попробовать снова
+                    </Button>
+                    <Link to="/dashboard">
                         <Button
-                            onClick={handleRetry}
-                            className="h-10 px-5 rounded-xl bg-blue-500 text-white hover:bg-blue-600 transition-all font-medium text-[14px]"
+                            variant="outline"
+                            className="h-10 cursor-pointer rounded-md border-[var(--brand-border)] px-5 text-[14px] font-medium text-[var(--brand-dark)] hover:bg-[var(--brand-cream)]"
                         >
-                            <ArrowPathIcon className="mr-1.5 size-4" />
-                            Попробовать снова
+                            <HomeIcon className="mr-1.5 size-4" />
+                            В админку
                         </Button>
-                        <a href={TG_MANAGER} target="_blank" rel="noreferrer">
-                            <Button
-                                variant="outline"
-                                className="h-10 px-5 rounded-xl font-medium text-[14px]"
-                            >
-                                <ChatBubbleLeftRightIcon className="mr-1.5 size-4" />
-                                Менеджер
-                            </Button>
-                        </a>
-                    </div>
+                    </Link>
                 </div>
             </div>
         </div>

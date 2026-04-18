@@ -19,6 +19,7 @@
     "@fontsource/inter": "^5.2.8",
     "@fontsource/manrope": "^5.2.8",
     "@fontsource/onest": "^5.2.11",
+    "@formkit/auto-animate": "^0.9.0",
     "@gravity-ui/icons": "^2.18.0",
     "@heroicons/react": "^2.2.0",
     "@heroui/react": "^2.8.10",
