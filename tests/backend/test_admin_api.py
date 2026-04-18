@@ -193,8 +193,8 @@ class AdminApiTests(BackendDatabaseTestCase):
             get_response.json(),
             {
                 "tone_of_voice": "helpful",
-                "confidence_threshold": 0.7,
-                "top_k": 5,
+                "confidence_threshold": 0.55,
+                "top_k": 7,
                 "use_articles": True,
             },
         )

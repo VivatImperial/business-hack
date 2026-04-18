@@ -39,8 +39,8 @@ class Settings(BaseSettings):
     telegram_bot_token: str | None = None
 
     default_tone_of_voice: str = "helpful"
-    default_confidence_threshold: float = Field(default=0.7, ge=0.0, le=1.0)
-    default_top_k: int = Field(default=5, ge=1)
+    default_confidence_threshold: float = Field(default=0.55, ge=0.0, le=1.0)
+    default_top_k: int = Field(default=7, ge=1)
     default_use_articles: bool = True
 
     ai_agent_base_url: str = "http://ai-agent:8090"

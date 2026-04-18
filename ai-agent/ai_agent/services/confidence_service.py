@@ -30,15 +30,17 @@ class ConfidenceService:
 
         top_ticket = retrieval.tickets[0]
         if self._is_conflicting(top_ticket.payload):
-            return "escalate"
+            return "clarify"
 
-        if top_ticket.score >= threshold and not bool(top_ticket.payload.get("candidate_for_abstain")):
+        if top_ticket.score >= max(0.5, threshold - 0.15) and not bool(
+            top_ticket.payload.get("candidate_for_abstain")
+        ):
             return "answer"
 
-        if retrieval.articles and top_ticket.score >= max(0.45, threshold - 0.15):
+        if retrieval.articles and top_ticket.score >= max(0.35, threshold - 0.2):
             return "answer"
 
-        if top_ticket.score >= max(0.35, threshold - 0.2):
+        if top_ticket.score >= max(0.22, threshold - 0.28):
             return "clarify"
         return "escalate"
 
