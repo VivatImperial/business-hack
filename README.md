@@ -176,6 +176,7 @@ Backend при запуске применяет Alembic migrations и зате�
 - `BACKEND_AI_AGENT_BASE_URL`
 - `TELEGRAM_BOT_TOKEN`
 - `BACKEND_ENABLE_DEV_SEED`
+- `YANDEX_GPT_BASE_URL` (`https://llm.api.cloud.yandex.net/v1` для OpenAI-compatible режима)
 
 Синхронизация проекций из MSSQL в Postgres:
 
@@ -220,6 +221,18 @@ TELEGRAM_BOT_TOKEN=your-telegram-bot-token
 /reply <request_id> <text>
 ```
 
+Если Telegram Bot API недоступен с основной машины, бот можно держать на отдельном хосте, а backend оставить на `bereg.website`. Для этого:
+
+1. заполните `TELEGRAM_BOT_TOKEN` в корневом `.env`;
+2. проверьте `telegram-bot/.env.example`;
+3. запустите локально:
+
+```bash
+./scripts/deploy_telegram_bot_host.sh root@your-bot-host https://bereg.website
+```
+
+Systemd unit-шаблон лежит в `telegram-bot/deploy/bb-telegram-bot.service`.
+
 ### Ключевые таблицы
 
 | Таблица | Назначение |
@@ -239,17 +252,12 @@ YandexGPT совместим с OpenAI API. Настройте переменн�
 
 ```
 YANDEX_GPT_API_KEY=your-api-key
-YANDEX_GPT_FOLDER_ID=your-folder-id
+YANDEX_GPT_BASE_URL=https://llm.api.cloud.yandex.net/v1
+YANDEX_GPT_FOLDER_ID=
 YANDEX_GPT_MODEL=yandexgpt/latest
 ```
 
-Endpoint: `https://llm.api.cloud.yandex.net/foundationModels/v1/completion`
-
-Для OpenAI-совместимого интерфейса используйте:
-
-```
-YANDEX_GPT_BASE_URL=https://llm.api.cloud.yandex.net/foundationModels/v1
-```
+Если используется native YandexGPT endpoint вместо OpenAI-compatible режима, задайте реальный `YANDEX_GPT_FOLDER_ID` и соответствующий `YANDEX_GPT_BASE_URL`.
 
 ### Получение API-ключа
 

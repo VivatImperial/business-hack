@@ -1,0 +1,15 @@
+[Unit]
+Description=Baltiyskiy Bereg Telegram Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/business-hack-telegram-bot/telegram-bot
+ExecStart=/opt/business-hack-telegram-bot/telegram-bot/.venv/bin/python -m telegram_bot.main
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

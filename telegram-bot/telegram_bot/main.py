@@ -15,16 +15,24 @@ async def run() -> None:
         timeout_seconds=settings.request_timeout_seconds,
     )
     application = build_application(backend=backend, token=settings.telegram_bot_token)
+    initialized = False
+    started = False
+    polling_started = False
     try:
         await application.initialize()
+        initialized = True
         await application.start()
+        started = True
         await application.updater.start_polling(drop_pending_updates=True)
+        polling_started = True
         await asyncio.Event().wait()
     finally:
-        if application.updater is not None:
+        if application.updater is not None and polling_started:
             await application.updater.stop()
-        await application.stop()
-        await application.shutdown()
+        if started:
+            await application.stop()
+        if initialized:
+            await application.shutdown()
         await backend.aclose()
 
 
