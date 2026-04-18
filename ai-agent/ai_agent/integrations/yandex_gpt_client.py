@@ -31,11 +31,11 @@ class YandexGptClient:
         return self.base_url.endswith("/v1") and not self.base_url.endswith("/foundationModels/v1")
 
     def _resolve_model_name(self) -> str:
-        if self._is_openai_compatible_mode():
-            return self.model_name
         if self.model_name.startswith("gpt://"):
             return self.model_name
         if not self.folder_id or self.folder_id == "your-folder-id":
+            if self._is_openai_compatible_mode():
+                return self.model_name
             raise RuntimeError("YANDEX_GPT_FOLDER_ID must be set to call the native YandexGPT API.")
         return f"gpt://{self.folder_id}/{self.model_name.lstrip('/')}"
 
@@ -47,11 +47,7 @@ class YandexGptClient:
             "Authorization": f"Api-Key {self.api_key}",
             "Content-Type": "application/json",
         }
-        if (
-            not self._is_openai_compatible_mode()
-            and self.folder_id
-            and self.folder_id != "your-folder-id"
-        ):
+        if self.folder_id and self.folder_id != "your-folder-id":
             headers["x-folder-id"] = self.folder_id
 
         payload: dict[str, Any] = {
