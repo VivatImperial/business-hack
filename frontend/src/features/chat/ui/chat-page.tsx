@@ -382,22 +382,31 @@ function ChatConversation({ requestId }: { requestId: string }) {
         },
     });
     const sourceMutation = useMutation({
-        mutationFn: async (sourceId: string) => {
+        mutationFn: async (citation: MessageCitation) => {
             const response = await customFetch<{
                 status: number;
                 data: SourceReferenceResponse;
-            }>(`/api/v1/admin/appeals/sources/${encodeURIComponent(sourceId)}`, {
+            }>(`/api/v1/admin/appeals/sources/${encodeURIComponent(citation.source_id)}`, {
                 method: "GET",
             });
             return response.data;
         },
         onSuccess: (source) => setSourceDialog(source),
-        onError: (error) => {
-            showError(
-                error instanceof Error
-                    ? error.message
-                    : "Не удалось открыть источник",
-            );
+        onError: (error, citation) => {
+            if (citation?.snippet) {
+                setSourceDialog({
+                    source_id: citation.source_id,
+                    source_type:
+                        citation.source_type === "article" ? "article" : "ticket",
+                    title: citation.title || citation.source_id,
+                    subtitle: "Фрагмент из retrieval-контекста",
+                    body: citation.snippet,
+                    app_url: null,
+                });
+                showError("Оригинал источника недоступен, открыт сохраненный фрагмент");
+                return;
+            }
+            showError(error instanceof Error ? error.message : "Не удалось открыть источник");
         },
     });
 
@@ -488,7 +497,7 @@ function ChatConversation({ requestId }: { requestId: string }) {
         if (!viewerIsAdmin) {
             return;
         }
-        sourceMutation.mutate(citation.source_id);
+        sourceMutation.mutate(citation);
     };
 
     const pending =
@@ -551,7 +560,7 @@ function ChatConversation({ requestId }: { requestId: string }) {
                             }
                             sourceLoadingId={
                                 sourceMutation.isPending
-                                    ? sourceMutation.variables
+                                    ? sourceMutation.variables?.source_id
                                     : null
                             }
                         />
