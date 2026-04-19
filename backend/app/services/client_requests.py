@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import re
 from uuid import uuid4
 
 import httpx
@@ -16,6 +17,23 @@ from backend.app.schemas.client import (
 
 
 class ClientRequestsService:
+    RESOLVED_INTENT_RE = re.compile(
+        r"\b("
+        r"решен[аоы]?|"
+        r"решилось|"
+        r"помогл[оаи]?|"
+        r"сработал[оаи]?|"
+        r"заработал[оаи]?|"
+        r"можно закрывать|"
+        r"закрывайте|"
+        r"все ок|"
+        r"всё ок|"
+        r"все работает|"
+        r"всё работает"
+        r")\b",
+        re.IGNORECASE,
+    )
+
     def __init__(
         self,
         repository: AdminRepository,
@@ -28,6 +46,44 @@ class ClientRequestsService:
     async def _reload_ticket(self, ticket: Ticket) -> Ticket:
         await self.repository.session.refresh(ticket, attribute_names=["messages"])
         return ticket
+
+    @classmethod
+    def is_resolution_confirmation(cls, text: str) -> bool:
+        normalized = text.strip().lower()
+        if not normalized:
+            return False
+        return bool(cls.RESOLVED_INTENT_RE.search(normalized))
+
+    @classmethod
+    def is_awaiting_csat(cls, ticket: Ticket) -> bool:
+        return ticket.status == "closed" and ticket.csat is None and ticket.rating_request_sent
+
+    @classmethod
+    def can_self_close(cls, ticket: Ticket) -> bool:
+        if ticket.status == "closed" or cls.is_awaiting_csat(ticket):
+            return False
+        if not ticket.messages:
+            return False
+
+        last_message = ticket.messages[-1]
+        if ticket.assistant_resolved and last_message.role == "assistant":
+            return True
+
+        if last_message.role == "user" and cls.is_resolution_confirmation(last_message.text):
+            return ticket.assistant_resolved and any(
+                message.role == "assistant" for message in ticket.messages[:-1]
+            )
+        return False
+
+    @classmethod
+    def build_request_state(cls, ticket: Ticket) -> dict[str, object]:
+        return {
+            "csat": ticket.csat,
+            "assistant_resolved": ticket.assistant_resolved,
+            "rating_request_sent": ticket.rating_request_sent,
+            "can_self_close": cls.can_self_close(ticket),
+            "awaiting_csat": cls.is_awaiting_csat(ticket),
+        }
 
     async def _build_ai_payload(
         self,
@@ -147,7 +203,8 @@ class ClientRequestsService:
         await self.repository.add_ticket(ticket)
         await self.repository.add_message(message)
         await self.repository.commit()
-        await self._respond_with_ai(ticket=ticket, user_message=message, history=[message])
+        ticket = await self._reload_ticket(ticket)
+        await self._respond_with_ai(ticket=ticket, user_message=message, history=ticket.messages)
         return await self._reload_ticket(ticket)
 
     async def list_requests(
@@ -207,9 +264,63 @@ class ClientRequestsService:
         ticket.updated_at = now
         await self.repository.add_message(message)
         await self.repository.commit()
+        ticket = await self._reload_ticket(ticket)
+        if self.can_self_close(ticket):
+            return ticket
         await self._respond_with_ai(
             ticket=ticket,
             user_message=message,
-            history=[*ticket.messages, message],
+            history=ticket.messages,
         )
+        return await self._reload_ticket(ticket)
+
+    async def close_request(
+        self,
+        *,
+        current_user: User,
+        request_id: str,
+    ) -> Ticket:
+        ticket = await self.get_request(current_user=current_user, request_id=request_id)
+        if ticket.status == "closed":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Request is already closed.",
+            )
+        if not self.can_self_close(ticket):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Request cannot be closed yet.",
+            )
+
+        now = datetime.now(timezone.utc)
+        ticket.status = "closed"
+        ticket.closed_at = now
+        ticket.updated_at = now
+        ticket.rating_request_sent = True
+        await self.repository.commit()
+        return await self._reload_ticket(ticket)
+
+    async def submit_rating(
+        self,
+        *,
+        current_user: User,
+        request_id: str,
+        score: int,
+    ) -> Ticket:
+        ticket = await self.get_request(current_user=current_user, request_id=request_id)
+        if ticket.status != "closed":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Request must be closed before rating.",
+            )
+        if ticket.csat is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Rating was already submitted.",
+            )
+
+        ticket.csat = float(score)
+        ticket.rating_request_sent = True
+        ticket.updated_at = datetime.now(timezone.utc)
+        await self.repository.commit()
         return await self._reload_ticket(ticket)

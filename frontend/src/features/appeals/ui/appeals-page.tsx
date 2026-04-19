@@ -13,7 +13,7 @@ import {
     AppealListItemResponseStatus as AppealStatus,
 } from "@/lib/api/generated/schemas";
 import type {
-    AppealListItemResponse as AppealListItem,
+    AppealListItemResponse as GeneratedAppealListItem,
     ListAppealsApiV1AdminAppealsGetParams as ListAppealsParams,
 } from "@/lib/api/generated/schemas";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,10 @@ import { AppealCard } from "@/features/appeals/ui/appeal-card";
 import { ApiError } from "@/lib/api/client";
 import { motion } from "@/shared/animations/motion";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
+
+type AppealListItem = GeneratedAppealListItem & {
+    rating_request_sent?: boolean;
+};
 
 const SCOPE_TABS: Array<{ key: string; label: string }> = [
     { key: "all", label: "Все" },
@@ -107,7 +111,7 @@ export function AppealsPage() {
         mutation: {
             onSuccess: () => {
                 qc.invalidateQueries({ queryKey: getListAppealsQueryKey() });
-                show("Обращение закрыто");
+                show("Обращение закрыто, запрос оценки отправлен");
             },
             onError: (err) => {
                 showError(

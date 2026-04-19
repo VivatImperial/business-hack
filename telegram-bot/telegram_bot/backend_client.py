@@ -165,3 +165,26 @@ class BackendClient:
             },
         )
         return response.json()
+
+    async def close_request(self, *, token: str, request_id: str) -> dict[str, object]:
+        response = await self._request(
+            "POST",
+            f"/api/v1/client/requests/{request_id}/close",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        return response.json()
+
+    async def submit_rating(
+        self,
+        *,
+        token: str,
+        request_id: str,
+        score: int,
+    ) -> dict[str, object]:
+        response = await self._request(
+            "POST",
+            f"/api/v1/client/requests/{request_id}/rating",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"score": score},
+        )
+        return response.json()

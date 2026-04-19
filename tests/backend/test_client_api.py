@@ -7,7 +7,7 @@ import unittest
 from fastapi.testclient import TestClient
 
 from backend.app import create_app
-from backend.app.helpers.dependencies import get_ai_agent_service
+from backend.app.helpers.dependencies import get_ai_agent_service, get_yandex_ocr_service
 from tests.backend.support import BackendDatabaseTestCase
 
 
@@ -23,12 +23,22 @@ class FakeAiAgentService:
         }
 
 
+class FakeYandexOcrService:
+    is_configured = True
+
+    async def recognize_text(self, *, file_bytes: bytes, mime_type: str, language_codes=None) -> str:
+        if file_bytes == b"empty":
+            return ""
+        return f"OCR({mime_type}): VPN код подтверждения"
+
+
 class ClientApiTests(BackendDatabaseTestCase):
     def setUp(self) -> None:
         super().setUp()
         os.environ["BACKEND_TELEGRAM_BOT_TOKEN"] = "telegram-test-token"
         self.app = create_app()
         self.app.dependency_overrides[get_ai_agent_service] = lambda: FakeAiAgentService()
+        self.app.dependency_overrides[get_yandex_ocr_service] = lambda: FakeYandexOcrService()
         self.client = TestClient(self.app)
 
     def tearDown(self) -> None:
@@ -82,7 +92,11 @@ class ClientApiTests(BackendDatabaseTestCase):
         self.assertEqual(create_response.status_code, 200, create_response.text)
         request_id = create_response.json()["id"]
         self.assertEqual(create_response.json()["channel"], "telegram")
+        self.assertFalse(create_response.json()["awaiting_csat"])
+        self.assertTrue(create_response.json()["can_self_close"])
         self.assertEqual(len(create_response.json()["messages"]), 2)
+        self.assertEqual(create_response.json()["messages"][0]["role"], "user")
+        self.assertEqual(create_response.json()["messages"][0]["text"], "Нужен доступ к VPN")
         self.assertEqual(create_response.json()["messages"][-1]["role"], "assistant")
         self.assertEqual(create_response.json()["messages"][-1]["text"], "AI: Нужен доступ к VPN")
 
@@ -101,11 +115,93 @@ class ClientApiTests(BackendDatabaseTestCase):
         )
         self.assertEqual(message_response.status_code, 200, message_response.text)
         self.assertEqual(len(message_response.json()["messages"]), 4)
+        self.assertEqual(
+            [message["role"] for message in message_response.json()["messages"]],
+            ["user", "assistant", "user", "assistant"],
+        )
         self.assertEqual(message_response.json()["messages"][-1]["role"], "assistant")
         self.assertEqual(
             message_response.json()["messages"][-1]["text"],
             "AI: И еще нужен доступ к почте",
         )
+
+    def test_ocr_endpoint_returns_recognized_text(self) -> None:
+        access_token = self._register_user(login="ocr-user", email="ocr@example.com")
+        response = self.client.post(
+            "/api/v1/client/ocr",
+            headers={"Authorization": f"Bearer {access_token}"},
+            files={"image": ("screen.png", b"fake-image", "image/png")},
+        )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["mime_type"], "image/png")
+        self.assertIn("VPN", response.json()["text"])
+
+    def test_request_can_be_closed_and_rated_after_resolution(self) -> None:
+        access_token = self._register_user(login="close-user", email="close@example.com")
+        headers = {"Authorization": f"Bearer {access_token}"}
+
+        create_response = self.client.post(
+            "/api/v1/client/requests",
+            headers=headers,
+            json={
+                "title": "VPN",
+                "description": "Не работает VPN",
+                "channel": "web",
+            },
+        )
+        self.assertEqual(create_response.status_code, 200, create_response.text)
+        request_id = create_response.json()["id"]
+        self.assertTrue(create_response.json()["can_self_close"])
+
+        close_response = self.client.post(
+            f"/api/v1/client/requests/{request_id}/close",
+            headers=headers,
+        )
+        self.assertEqual(close_response.status_code, 200, close_response.text)
+        self.assertTrue(close_response.json()["rating_request_sent"])
+
+        rating_response = self.client.post(
+            f"/api/v1/client/requests/{request_id}/rating",
+            headers=headers,
+            json={"score": 5},
+        )
+        self.assertEqual(rating_response.status_code, 200, rating_response.text)
+        self.assertEqual(rating_response.json()["csat"], 5.0)
+
+        detail_response = self.client.get(
+            f"/api/v1/client/requests/{request_id}",
+            headers=headers,
+        )
+        self.assertEqual(detail_response.status_code, 200, detail_response.text)
+        self.assertEqual(detail_response.json()["status"], "closed")
+        self.assertEqual(detail_response.json()["csat"], 5.0)
+        self.assertFalse(detail_response.json()["awaiting_csat"])
+
+    def test_resolution_confirmation_message_skips_new_ai_reply(self) -> None:
+        access_token = self._register_user(login="resolve-user", email="resolve@example.com")
+        headers = {"Authorization": f"Bearer {access_token}"}
+
+        create_response = self.client.post(
+            "/api/v1/client/requests",
+            headers=headers,
+            json={
+                "title": "VPN",
+                "description": "Не работает VPN",
+                "channel": "web",
+            },
+        )
+        request_id = create_response.json()["id"]
+
+        message_response = self.client.post(
+            f"/api/v1/client/requests/{request_id}/messages",
+            headers=headers,
+            json={"text": "Спасибо, помогло, можно закрывать"},
+        )
+        self.assertEqual(message_response.status_code, 200, message_response.text)
+        self.assertEqual(len(message_response.json()["messages"]), 3)
+        self.assertEqual(message_response.json()["messages"][-1]["role"], "user")
+        self.assertTrue(message_response.json()["can_self_close"])
 
     def test_login_can_link_telegram_and_telegram_auth_can_reuse_account(self) -> None:
         self._register_user(login="linked", email="linked@example.com")

@@ -67,6 +67,8 @@ class AppealListItemResponse(BaseModel):
     processing_duration_minutes: int
     closed_at: datetime | None
     csat: float | None
+    assistant_resolved: bool = False
+    rating_request_sent: bool = False
 
 
 class AppealsListResponse(BaseModel):
@@ -89,6 +91,18 @@ class AppealConversationMessageItem(BaseModel):
     created_at: datetime
 
 
+class AppealMessageCreateRequest(BaseModel):
+    text: str = Field(min_length=1)
+
+    @field_validator("text")
+    @classmethod
+    def normalize_text(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("text must not be blank")
+        return normalized
+
+
 class AppealConversationResponse(BaseModel):
     """Full thread for an appeal — same fields as client `ClientRequestDetailResponse`."""
 
@@ -102,6 +116,11 @@ class AppealConversationResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     closed_at: datetime | None
+    csat: float | None = None
+    assistant_resolved: bool = False
+    rating_request_sent: bool = False
+    can_self_close: bool = False
+    awaiting_csat: bool = False
     messages: list[AppealConversationMessageItem]
 
 
@@ -114,6 +133,7 @@ class AppealCloseResponse(BaseModel):
     id: str
     status: Literal["closed"]
     closed_at: datetime
+    rating_request_sent: bool
 
 
 class AppealRatingResponse(BaseModel):

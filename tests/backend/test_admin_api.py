@@ -163,6 +163,7 @@ class AdminApiTests(BackendDatabaseTestCase):
         self.assertEqual(close_response.json()["id"], "appeal-1")
         self.assertEqual(close_response.json()["status"], "closed")
         self.assertIsNotNone(close_response.json()["closed_at"])
+        self.assertTrue(close_response.json()["rating_request_sent"])
         self.assertEqual(rating_response.status_code, 200, rating_response.text)
         self.assertEqual(
             rating_response.json(),
@@ -171,6 +172,40 @@ class AdminApiTests(BackendDatabaseTestCase):
                 "rating_request_sent": True,
             },
         )
+
+    def test_admin_can_append_message_to_appeal_conversation(self) -> None:
+        response = self.client.post(
+            "/api/v1/admin/appeals/appeal-1/messages",
+            headers=self._auth_headers(),
+            json={"text": "Проверьте, пожалуйста, подключение VPN и отпишитесь."},
+        )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["status"], "in_progress")
+        self.assertEqual(payload["messages"][-1]["role"], "assistant")
+        self.assertEqual(payload["messages"][-1]["author_login"], "admin")
+        self.assertEqual(
+            payload["messages"][-1]["text"],
+            "Проверьте, пожалуйста, подключение VPN и отпишитесь.",
+        )
+
+    def test_admin_close_adds_rating_prompt_to_conversation(self) -> None:
+        close_response = self.client.post(
+            "/api/v1/admin/appeals/appeal-1/close",
+            headers=self._auth_headers(),
+        )
+        self.assertEqual(close_response.status_code, 200, close_response.text)
+
+        conversation_response = self.client.get(
+            "/api/v1/admin/appeals/appeal-1/conversation",
+            headers=self._auth_headers(),
+        )
+        self.assertEqual(conversation_response.status_code, 200, conversation_response.text)
+        payload = conversation_response.json()
+        self.assertTrue(payload["awaiting_csat"])
+        self.assertTrue(payload["rating_request_sent"])
+        self.assertIn("Оцените", payload["messages"][-1]["text"])
 
     def test_settings_can_be_read_and_updated(self) -> None:
         get_response = self.client.get(

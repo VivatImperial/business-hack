@@ -9,6 +9,7 @@ from backend.app.helpers.dependencies import get_appeals_service, get_current_ad
 from backend.app.schemas.admin import (
     AppealCloseResponse,
     AppealConversationResponse,
+    AppealMessageCreateRequest,
     AppealDetailResponse,
     AppealListItemResponse,
     AppealRatingResponse,
@@ -35,6 +36,8 @@ def _serialize_appeal(
         processing_duration_minutes=appeals_service.processing_duration_minutes(ticket),
         closed_at=ticket.closed_at,
         csat=ticket.csat,
+        assistant_resolved=ticket.assistant_resolved,
+        rating_request_sent=ticket.rating_request_sent,
     )
 
 
@@ -72,6 +75,25 @@ async def get_appeal_conversation(
     appeals_service: AppealsService = Depends(get_appeals_service),
 ) -> AppealConversationResponse:
     return await appeals_service.get_appeal_conversation(appeal_id)
+
+
+@router.post(
+    "/{appeal_id}/messages",
+    response_model=AppealConversationResponse,
+    summary="Add admin message to appeal conversation",
+    description="Append an operator message to an appeal thread from the admin panel.",
+)
+async def add_appeal_message(
+    appeal_id: str,
+    payload: AppealMessageCreateRequest,
+    current_admin=Depends(get_current_admin),
+    appeals_service: AppealsService = Depends(get_appeals_service),
+) -> AppealConversationResponse:
+    return await appeals_service.add_admin_message(
+        appeal_id=appeal_id,
+        current_admin=current_admin,
+        payload=payload,
+    )
 
 
 @router.get(
@@ -117,7 +139,12 @@ async def close_appeal(
     appeals_service: AppealsService = Depends(get_appeals_service),
 ) -> AppealCloseResponse:
     ticket = await appeals_service.close_appeal(appeal_id)
-    return AppealCloseResponse(id=ticket.id, status="closed", closed_at=ticket.closed_at)
+    return AppealCloseResponse(
+        id=ticket.id,
+        status="closed",
+        closed_at=ticket.closed_at,
+        rating_request_sent=ticket.rating_request_sent,
+    )
 
 
 @router.post(

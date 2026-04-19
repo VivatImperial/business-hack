@@ -75,6 +75,28 @@ class ClientRequestMessageCreateRequest(BaseModel):
         return normalized
 
 
+class ClientRequestCloseResponse(BaseModel):
+    id: str
+    status: Literal["closed"]
+    closed_at: datetime
+    rating_request_sent: bool
+
+
+class ClientRequestRatingCreateRequest(BaseModel):
+    score: int = Field(ge=1, le=5)
+
+
+class ClientRequestRatingResponse(BaseModel):
+    id: str
+    csat: float
+
+
+class ClientOcrResponse(BaseModel):
+    text: str
+    mime_type: str
+    file_name: str | None = None
+
+
 class ClientRequestQuery(BaseModel):
     channel: ClientChannel | None = None
 
@@ -102,6 +124,11 @@ class ClientRequestListItemResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     closed_at: datetime | None
+    csat: float | None = None
+    assistant_resolved: bool = False
+    rating_request_sent: bool = False
+    can_self_close: bool = False
+    awaiting_csat: bool = False
 
 
 class ClientRequestDetailResponse(ClientRequestListItemResponse):

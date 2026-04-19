@@ -13,7 +13,9 @@ import {
     useMatches,
 } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { CheckBadgeIcon, PlusIcon } from "@heroicons/react/24/solid";
+import { cn } from "@/lib/utils";
 
 import {
     useCreateRequestApiV1ClientRequestsPost,
@@ -22,6 +24,7 @@ import {
     getListRequestsApiV1ClientRequestsGetQueryKey,
     getGetRequestApiV1ClientRequestsRequestIdGetQueryKey,
 } from "@/lib/api/generated/client-requests/client-requests";
+import { getListAppealsApiV1AdminAppealsGetQueryKey } from "@/lib/api/generated/admin-appeals/admin-appeals";
 import type {
     ClientRequestDetailResponse,
     ClientRequestMessageResponse,
@@ -34,6 +37,45 @@ import { ChatInput } from "@/features/chat/ui/chat-input";
 import { MessageUser } from "@/features/chat/ui/message-user";
 import { MessageAssistant } from "@/features/chat/ui/message-assistant";
 import { ChatEmpty } from "@/features/chat/ui/chat-empty";
+
+type ChatRequestDetail = ClientRequestDetailResponse & {
+    csat: number | null;
+    assistant_resolved: boolean;
+    rating_request_sent: boolean;
+    can_self_close: boolean;
+    awaiting_csat: boolean;
+};
+
+type ClientOcrResponse = {
+    text: string;
+    mime_type: string;
+    file_name?: string | null;
+};
+
+type ClientRequestCloseResponse = {
+    id: string;
+    status: "closed";
+    closed_at: string;
+    rating_request_sent: boolean;
+};
+
+type ClientRequestRatingResponse = {
+    id: string;
+    csat: number;
+};
+
+async function recognizeImage(file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append("image", file);
+    const response = await customFetch<{
+        status: number;
+        data: ClientOcrResponse;
+    }>("/api/v1/client/ocr", {
+        method: "POST",
+        body: formData,
+    });
+    return response.data.text;
+}
 
 export function ChatPage() {
     const matches = useMatches();
@@ -54,6 +96,9 @@ function ChatFirstMessage() {
     const { showError } = useSnackbar();
     const queryClient = useQueryClient();
     const [optimisticText, setOptimisticText] = useState<string | null>(null);
+    const ocrMutation = useMutation({
+        mutationFn: recognizeImage,
+    });
 
     const createRequest = useCreateRequestApiV1ClientRequestsPost({
         mutation: {
@@ -109,6 +154,7 @@ function ChatFirstMessage() {
             footer={
                 <ChatInput
                     onSend={handleSend}
+                    onRecognizeImage={(file) => ocrMutation.mutateAsync(file)}
                     disabled={pending}
                     autoFocus
                 />
@@ -142,9 +188,12 @@ function getAdminAppealConversationQueryKey(requestId: string) {
 
 function ChatConversation({ requestId }: { requestId: string }) {
     const navigate = useNavigate();
-    const { showError } = useSnackbar();
+    const { show, showError } = useSnackbar();
     const queryClient = useQueryClient();
     const [optimisticText, setOptimisticText] = useState<string | null>(null);
+    const [resolutionExpanded, setResolutionExpanded] = useState(false);
+    const [resolutionDismissed, setResolutionDismissed] = useState(false);
+    const [selectedScore, setSelectedScore] = useState<number | null>(null);
     const { role } = appRoute.useRouteContext();
     const viewerIsAdmin = role === "admin";
 
@@ -153,7 +202,7 @@ function ChatConversation({ requestId }: { requestId: string }) {
         queryFn: () =>
             customFetch<{
                 status: number;
-                data: ClientRequestDetailResponse;
+                data: ChatRequestDetail;
             }>(`/api/v1/admin/appeals/${requestId}/conversation`, {
                 method: "GET",
             }),
@@ -218,18 +267,88 @@ function ChatConversation({ requestId }: { requestId: string }) {
             },
         },
     });
+    const addAdminMessage = useMutation({
+        mutationFn: (text: string) =>
+            customFetch<{
+                status: number;
+                data: ChatRequestDetail;
+            }>(`/api/v1/admin/appeals/${requestId}/messages`, {
+                method: "POST",
+                body: JSON.stringify({ text }),
+            }),
+        onSuccess: (res) => {
+            if (res.status === 200) {
+                queryClient.setQueryData(
+                    getAdminAppealConversationQueryKey(requestId),
+                    res,
+                );
+                queryClient.invalidateQueries({
+                    queryKey: getListAppealsApiV1AdminAppealsGetQueryKey(),
+                });
+            }
+            setOptimisticText(null);
+        },
+        onError: (err) => {
+            setOptimisticText(null);
+            const message =
+                err instanceof Error
+                    ? err.message
+                    : "Не удалось отправить сообщение";
+            showError(message);
+        },
+    });
+    const ocrMutation = useMutation({
+        mutationFn: recognizeImage,
+    });
+    const closeRequest = useMutation({
+        mutationFn: () =>
+            customFetch<{
+                status: number;
+                data: ClientRequestCloseResponse;
+            }>(`/api/v1/client/requests/${requestId}/close`, {
+                method: "POST",
+            }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: getGetRequestApiV1ClientRequestsRequestIdGetQueryKey(
+                    requestId,
+                ),
+            });
+            queryClient.invalidateQueries({
+                queryKey: getListRequestsApiV1ClientRequestsGetQueryKey(),
+            });
+        },
+    });
+    const submitRating = useMutation({
+        mutationFn: (score: number) =>
+            customFetch<{
+                status: number;
+                data: ClientRequestRatingResponse;
+            }>(`/api/v1/client/requests/${requestId}/rating`, {
+                method: "POST",
+                body: JSON.stringify({ score }),
+            }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: getGetRequestApiV1ClientRequestsRequestIdGetQueryKey(
+                    requestId,
+                ),
+            });
+            queryClient.invalidateQueries({
+                queryKey: getListRequestsApiV1ClientRequestsGetQueryKey(),
+            });
+        },
+    });
 
     const detail =
-        detailQuery.data?.status === 200 ? detailQuery.data.data : undefined;
+        detailQuery.data?.status === 200
+            ? (detailQuery.data.data as ChatRequestDetail)
+            : undefined;
     const messages = useMemo<ClientRequestMessageResponse[]>(
         () => detail?.messages ?? [],
         [detail?.messages],
     );
     const isClosed = detail?.status === "closed";
-    const isResolvedByAssistant = detail?.status !== "closed" && false;
-    // Note: assistant-resolved flag isn't in the detail payload; leaving
-    // placeholder so we can wire it up later if the backend adds it.
-    void isResolvedByAssistant;
 
     const scrollerRef = useRef<HTMLDivElement | null>(null);
     const [atBottom, setAtBottom] = useState(true);
@@ -248,14 +367,58 @@ function ChatConversation({ requestId }: { requestId: string }) {
         setAtBottom(isBottom);
     };
 
+    useEffect(() => {
+        setSelectedScore(null);
+        if (detail?.awaiting_csat) {
+            setResolutionExpanded(true);
+            setResolutionDismissed(false);
+            return;
+        }
+        if (!detail?.can_self_close) {
+            setResolutionExpanded(false);
+            setResolutionDismissed(false);
+        }
+    }, [detail?.awaiting_csat, detail?.can_self_close, requestId]);
+
     const handleSend = (text: string) => {
         const trimmed = text.trim();
         if (!trimmed) return;
         setOptimisticText(trimmed);
+        if (viewerIsAdmin) {
+            addAdminMessage.mutate(trimmed);
+            return;
+        }
         addMessage.mutate({ requestId, data: { text: trimmed } });
     };
 
-    const pending = addMessage.isPending || optimisticText !== null;
+    const handleResolutionSubmit = async () => {
+        if (!detail || viewerIsAdmin) return;
+        if (selectedScore === null) {
+            showError("Поставьте оценку от 1 до 5");
+            return;
+        }
+
+        try {
+            if (!detail.awaiting_csat) {
+                await closeRequest.mutateAsync();
+            }
+            await submitRating.mutateAsync(selectedScore);
+            setResolutionExpanded(false);
+            setResolutionDismissed(false);
+            setSelectedScore(null);
+            show("Спасибо за оценку");
+        } catch (error) {
+            showError(
+                error instanceof Error
+                    ? error.message
+                    : "Не удалось сохранить оценку",
+            );
+        }
+    };
+
+    const pending =
+        addMessage.isPending || addAdminMessage.isPending || optimisticText !== null;
+    const resolutionPending = closeRequest.isPending || submitRating.isPending;
 
     if (detailQuery.isLoading) {
         return (
@@ -278,15 +441,16 @@ function ChatConversation({ requestId }: { requestId: string }) {
             scrollerRef={scrollerRef}
             onScroll={onScroll}
             footer={
-                isClosed ? (
+                isClosed && !detail?.awaiting_csat ? (
                     <ClosedBanner />
-                ) : (
+                ) : !isClosed ? (
                     <ChatInput
                         onSend={handleSend}
+                        onRecognizeImage={(file) => ocrMutation.mutateAsync(file)}
                         disabled={pending}
                         autoFocus
                     />
-                )
+                ) : undefined
             }
         >
             {detail?.title && (
@@ -309,6 +473,25 @@ function ChatConversation({ requestId }: { requestId: string }) {
                             index={idx}
                         />
                     ),
+                )
+            }
+
+                {!viewerIsAdmin && detail && (
+                    <ResolutionPanel
+                        canSelfClose={detail.can_self_close}
+                        awaitingCsat={detail.awaiting_csat}
+                        dismissed={resolutionDismissed}
+                        expanded={resolutionExpanded}
+                        score={selectedScore}
+                        pending={resolutionPending}
+                        onOpen={() => setResolutionExpanded(true)}
+                        onDismiss={() => {
+                            setResolutionExpanded(false);
+                            setResolutionDismissed(true);
+                        }}
+                        onScoreChange={setSelectedScore}
+                        onSubmit={handleResolutionSubmit}
+                    />
                 )}
 
                 {optimisticText && (
@@ -417,6 +600,123 @@ function ClosedBanner() {
                 <PlusIcon className="size-3.5" />
                 Начать новый чат
             </Link>
+        </div>
+    );
+}
+
+function ResolutionPanel({
+    canSelfClose,
+    awaitingCsat,
+    dismissed,
+    expanded,
+    score,
+    pending,
+    onOpen,
+    onDismiss,
+    onScoreChange,
+    onSubmit,
+}: {
+    canSelfClose: boolean;
+    awaitingCsat: boolean;
+    dismissed: boolean;
+    expanded: boolean;
+    score: number | null;
+    pending: boolean;
+    onOpen: () => void;
+    onDismiss: () => void;
+    onScoreChange: (value: number) => void;
+    onSubmit: () => void;
+}) {
+    if (!awaitingCsat && (!canSelfClose || dismissed)) {
+        return null;
+    }
+
+    if (!expanded && !awaitingCsat) {
+        return (
+            <div className="rounded-2xl border border-[var(--brand-border)] bg-[var(--brand-cream)]/50 px-4 py-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <p className="text-sm font-semibold text-[var(--brand-dark)]">
+                            Проблема решена?
+                        </p>
+                        <p className="text-xs text-[var(--brand-text)]">
+                            Закройте заявку и сразу поставьте оценку качеству решения.
+                        </p>
+                    </div>
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={onOpen}
+                            className="rounded-full bg-[var(--brand-dark)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--brand-dark-2)]"
+                        >
+                            Да, закрыть
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onDismiss}
+                            className="rounded-full border border-[var(--brand-border)] px-4 py-2 text-sm font-medium text-[var(--brand-text)] transition-colors hover:bg-white"
+                        >
+                            Еще нужна помощь
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="rounded-2xl border border-[var(--brand-border)] bg-[var(--brand-cream)]/50 px-4 py-4">
+            <div className="space-y-3">
+                <div>
+                    <p className="text-sm font-semibold text-[var(--brand-dark)]">
+                        {awaitingCsat
+                            ? "Заявка закрыта. Оцените качество решения"
+                            : "Оцените решение и закройте заявку"}
+                    </p>
+                    <p className="text-xs text-[var(--brand-text)]">
+                        Оценка попадет в CSAT и поможет понять, насколько полезен ассистент.
+                    </p>
+                </div>
+                <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((value) => (
+                        <button
+                            key={value}
+                            type="button"
+                            disabled={pending}
+                            onClick={() => onScoreChange(value)}
+                            className={cn(
+                                "rounded-xl px-3 py-2 text-2xl transition-transform",
+                                score !== null && value <= score
+                                    ? "text-amber-400"
+                                    : "text-slate-300",
+                                "disabled:cursor-not-allowed disabled:opacity-50",
+                            )}
+                        >
+                            ★
+                        </button>
+                    ))}
+                </div>
+                <div className="flex gap-2">
+                    <button
+                        type="button"
+                        disabled={pending}
+                        onClick={onSubmit}
+                        className="rounded-full bg-[var(--brand-dark)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--brand-dark-2)] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        {awaitingCsat ? "Отправить оценку" : "Закрыть и отправить"}
+                    </button>
+                    {!awaitingCsat && (
+                        <button
+                            type="button"
+                            disabled={pending}
+                            onClick={onDismiss}
+                            className="rounded-full border border-[var(--brand-border)] px-4 py-2 text-sm font-medium text-[var(--brand-text)] transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Отмена
+                        </button>
+                    )}
+                </div>
+            </div>
         </div>
     );
 }

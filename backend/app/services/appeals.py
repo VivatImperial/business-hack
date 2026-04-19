@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from uuid import uuid4
 
 from fastapi import HTTPException, status
 
-from backend.app.db.models.entities import Ticket
+from backend.app.db.models.entities import Message, Ticket, User
 from backend.app.db.repositories.admin import AdminRepository
+from backend.app.services.client_requests import ClientRequestsService
 from backend.app.schemas.admin import (
     AppealConversationMessageItem,
+    AppealMessageCreateRequest,
     AppealConversationResponse,
     AppealsListQuery,
 )
@@ -41,7 +44,10 @@ class AppealsService:
 
     async def get_appeal_conversation(self, appeal_id: str) -> AppealConversationResponse:
         ticket = await self.get_appeal(appeal_id)
-        ordered = sorted(ticket.messages, key=lambda m: m.created_at)
+        ordered = sorted(
+            ticket.messages,
+            key=lambda m: (ensure_utc(m.created_at) or datetime.min.replace(tzinfo=timezone.utc), m.id),
+        )
         return AppealConversationResponse(
             id=ticket.id,
             title=ticket.title,
@@ -49,10 +55,15 @@ class AppealsService:
             status=ticket.status,
             priority=ticket.priority,
             category=ticket.category,
-            channel="web",
+            channel=ticket.channel,
             created_at=ticket.created_at,
             updated_at=ticket.updated_at,
             closed_at=ticket.closed_at,
+            csat=ticket.csat,
+            assistant_resolved=ticket.assistant_resolved,
+            rating_request_sent=ticket.rating_request_sent,
+            can_self_close=ClientRequestsService.can_self_close(ticket),
+            awaiting_csat=ClientRequestsService.is_awaiting_csat(ticket),
             messages=[
                 AppealConversationMessageItem(
                     id=m.id,
@@ -64,6 +75,42 @@ class AppealsService:
                 for m in ordered
             ],
         )
+
+    async def add_admin_message(
+        self,
+        *,
+        appeal_id: str,
+        current_admin: User,
+        payload: AppealMessageCreateRequest,
+    ) -> AppealConversationResponse:
+        ticket = await self.get_appeal(appeal_id)
+        if ticket.status == "closed":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Appeal is already closed.",
+            )
+
+        now = datetime.now(timezone.utc)
+        message = Message(
+            id=f"message-{uuid4().hex}",
+            ticket_id=ticket.id,
+            source_system="backend_admin",
+            source_message_id=uuid4().hex,
+            role="assistant",
+            author_login=current_admin.login,
+            text=payload.text,
+            created_at=now,
+            processed_at=now,
+        )
+        ticket.updated_at = now
+        ticket.status = "in_progress"
+        ticket.scope = "ticket"
+        ticket.assistant_resolved = False
+        ticket.taken_by_user_id = current_admin.id
+        await self.repository.add_message(message)
+        await self.repository.commit()
+        await self.repository.session.refresh(ticket, attribute_names=["messages"])
+        return await self.get_appeal_conversation(appeal_id)
 
     async def take_appeal(self, appeal_id: str, user_id: str) -> Ticket:
         ticket = await self.get_appeal(appeal_id)
@@ -80,8 +127,24 @@ class AppealsService:
     async def close_appeal(self, appeal_id: str) -> Ticket:
         ticket = await self.get_appeal(appeal_id)
         if ticket.status != "closed":
+            now = datetime.now(timezone.utc)
             ticket.status = "closed"
-            ticket.closed_at = datetime.now(timezone.utc)
+            ticket.closed_at = now
+            ticket.updated_at = now
+            ticket.rating_request_sent = True
+            ticket.assistant_resolved = False
+            message = Message(
+                id=f"message-{uuid4().hex}",
+                ticket_id=ticket.id,
+                source_system="backend_admin",
+                source_message_id=uuid4().hex,
+                role="assistant",
+                author_login="system",
+                text="Заявка закрыта. Оцените, пожалуйста, качество решения по шкале от 1 до 5.",
+                created_at=now,
+                processed_at=now,
+            )
+            await self.repository.add_message(message)
             await self.repository.commit()
         return ticket
 

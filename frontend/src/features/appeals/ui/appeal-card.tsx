@@ -7,7 +7,7 @@ import {
 } from "@heroicons/react/24/solid";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/lib/utils";
-import type { AppealListItemResponse as AppealListItem } from "@/lib/api/generated/schemas";
+import type { AppealListItemResponse as GeneratedAppealListItem } from "@/lib/api/generated/schemas";
 import { AppealListItemResponseStatus as AppealStatus } from "@/lib/api/generated/schemas";
 import {
     PRIORITY_BADGE,
@@ -16,6 +16,10 @@ import {
     priorityLabel,
     statusLabel,
 } from "@/features/appeals/lib/format";
+
+type AppealListItem = GeneratedAppealListItem & {
+    rating_request_sent?: boolean;
+};
 
 interface AppealCardProps {
     item: AppealListItem;
@@ -51,6 +55,16 @@ export function AppealCard({
                     <span
                         className={cn(
                             "inline-flex items-center rounded-full px-2.5 py-1 text-[12px] font-semibold tracking-wide",
+                            item.scope === "assistant"
+                                ? "bg-blue-50 text-blue-700"
+                                : "bg-slate-100 text-slate-700",
+                        )}
+                    >
+                        {item.scope === "assistant" ? "Ассистент" : "Оператор"}
+                    </span>
+                    <span
+                        className={cn(
+                            "inline-flex items-center rounded-full px-2.5 py-1 text-[12px] font-semibold tracking-wide",
                             PRIORITY_BADGE[item.priority],
                         )}
                     >
@@ -75,6 +89,13 @@ export function AppealCard({
                             </span>
                         </span>
                     )}
+                    {isClosed &&
+                        item.csat === null &&
+                        item.rating_request_sent && (
+                            <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[12px] font-medium text-emerald-700">
+                                Ждет оценку
+                            </span>
+                        )}
                 </div>
 
                 {/* Bottom row: employee + actions */}

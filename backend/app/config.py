@@ -45,6 +45,16 @@ class Settings(BaseSettings):
 
     ai_agent_base_url: str = "http://ai-agent:8090"
     ai_agent_timeout_seconds: float = Field(default=30.0, gt=0.0)
+    yandex_ocr_api_key: str | None = Field(default=None, validation_alias="YANDEX_OCR_API_KEY")
+    yandex_ocr_folder_id: str | None = Field(default=None, validation_alias="YANDEX_OCR_FOLDER_ID")
+    yandex_gpt_api_key: str | None = Field(default=None, validation_alias="YANDEX_GPT_API_KEY")
+    yandex_gpt_folder_id: str | None = Field(default=None, validation_alias="YANDEX_GPT_FOLDER_ID")
+    yandex_ocr_url: str = Field(
+        default="https://vision.api.cloud.yandex.net/vision/v1/batchAnalyze",
+        validation_alias="YANDEX_OCR_URL",
+    )
+    yandex_ocr_timeout_seconds: float = Field(default=30.0, gt=0.0)
+    yandex_ocr_max_upload_bytes: int = Field(default=8 * 1024 * 1024, ge=1024)
 
     mssql_host: str = Field(default="mssql", validation_alias="MSSQL_HOST")
     mssql_port: int = Field(default=1433, validation_alias="MSSQL_PORT")

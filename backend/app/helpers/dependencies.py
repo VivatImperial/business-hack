@@ -15,6 +15,7 @@ from backend.app.services.ai_agent_service import AiAgentService
 from backend.app.services.auth import AuthService
 from backend.app.services.dashboard import DashboardService
 from backend.app.services.settings import SettingsService
+from backend.app.services.yandex_ocr_service import YandexOcrService
 
 security = HTTPBearer(auto_error=False)
 
@@ -61,6 +62,17 @@ def get_ai_agent_service(
     return AiAgentService(
         base_url=settings.ai_agent_base_url,
         timeout_seconds=settings.ai_agent_timeout_seconds,
+    )
+
+
+def get_yandex_ocr_service(
+    settings: Settings = Depends(get_settings),
+) -> YandexOcrService:
+    return YandexOcrService(
+        api_key=settings.yandex_ocr_api_key or settings.yandex_gpt_api_key,
+        folder_id=settings.yandex_ocr_folder_id or settings.yandex_gpt_folder_id,
+        url=settings.yandex_ocr_url,
+        timeout_seconds=settings.yandex_ocr_timeout_seconds,
     )
 
 
