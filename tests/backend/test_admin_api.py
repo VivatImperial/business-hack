@@ -229,7 +229,7 @@ class AdminApiTests(BackendDatabaseTestCase):
         self.assertIsNone(payload["app_url"])
         self.assertIn("UniVPN", payload["body"])
 
-    def test_settings_can_be_read_and_updated(self) -> None:
+    def test_settings_can_be_read_but_update_is_disabled(self) -> None:
         get_response = self.client.get(
             "/api/v1/admin/settings",
             headers=self._auth_headers(),
@@ -255,16 +255,8 @@ class AdminApiTests(BackendDatabaseTestCase):
                 "use_articles": True,
             },
         )
-        self.assertEqual(put_response.status_code, 200, put_response.text)
-        self.assertEqual(
-            put_response.json(),
-            {
-                "tone_of_voice": "formal",
-                "confidence_threshold": 0.82,
-                "top_k": 7,
-                "use_articles": False,
-            },
-        )
+        self.assertEqual(put_response.status_code, 403, put_response.text)
+        self.assertIn("disabled", put_response.json()["detail"].lower())
 
 
 if __name__ == "__main__":

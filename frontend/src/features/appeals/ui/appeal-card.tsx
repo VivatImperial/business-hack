@@ -142,7 +142,7 @@ export function AppealCard({
                                 <ArrowRightIcon className="size-4" />
                             </Button>
                         )}
-                        {!isOpen && !isClosed && (
+                        {!isOpen && (
                             <Button
                                 onClick={onGoToChat}
                                 className="bg-[var(--brand-dark)] text-white hover:bg-[var(--brand-dark-2)]"

@@ -55,7 +55,7 @@ export function MessageAssistant({
                     ) : (
                         <>
                             <Markdown text={bodyText} />
-                            {citations.length > 0 ? (
+                            {citations.length > 0 && onOpenSource ? (
                                 <SourceList
                                     citations={citations}
                                     onOpenSource={onOpenSource}

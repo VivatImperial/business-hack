@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from backend.app.helpers.dependencies import get_current_admin, get_settings_service
 from backend.app.schemas.admin import AssistantSettingsResponse, AssistantSettingsUpdateRequest
@@ -34,17 +34,18 @@ async def get_settings(
     "",
     response_model=AssistantSettingsResponse,
     summary="Update assistant settings",
-    description="Persist assistant runtime settings such as tone of voice, confidence threshold, and top-k retrieval.",
+    description="Runtime settings updates are disabled for safety in production.",
 )
 async def update_settings(
     payload: AssistantSettingsUpdateRequest,
-    _: Annotated[object, Depends(get_current_admin)],
+    current_admin: Annotated[object, Depends(get_current_admin)],
     settings_service: SettingsService = Depends(get_settings_service),
 ) -> AssistantSettingsResponse:
-    settings = await settings_service.update_settings(payload)
-    return AssistantSettingsResponse(
-        tone_of_voice=settings.tone_of_voice,
-        confidence_threshold=settings.confidence_threshold,
-        top_k=settings.top_k,
-        use_articles=settings.use_articles,
+    _ = payload, current_admin, settings_service
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail=(
+            "Settings updates are disabled in production for safety. "
+            "Use the local draft UI instead."
+        ),
     )

@@ -1,16 +1,10 @@
-import { useEffect, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
 import { CheckIcon } from "@heroicons/react/24/solid";
-
-import {
-    useGetSettingsApiV1AdminSettingsGet as useGetSettings,
-    useUpdateSettingsApiV1AdminSettingsPut as useUpdateSettings,
-    getGetSettingsApiV1AdminSettingsGetQueryKey as getGetSettingsQueryKey,
-} from "@/lib/api/generated/admin-settings/admin-settings";
 import type { AssistantSettingsResponse as AssistantSettings } from "@/lib/api/generated/schemas";
 import { Input } from "@/shared/ui/input";
 import { cn } from "@/lib/utils";
-import { useSnackbar } from "@/hooks/use-snackbar";
+
+const SETTINGS_DRAFT_KEY = "admin-settings-draft";
 
 function formInitial(
     settings: AssistantSettings | undefined,
@@ -24,97 +18,84 @@ function formInitial(
 }
 
 export function SettingsPage() {
-    const qc = useQueryClient();
-    const { show, showError } = useSnackbar();
-    const settingsQuery = useGetSettings();
-    const settings =
-        settingsQuery.data?.status === 200
-            ? settingsQuery.data.data
-            : undefined;
-
     const [form, setForm] = useState<AssistantSettings>(() =>
-        formInitial(settings),
+        formInitial(undefined),
     );
-    const [isDirty, setIsDirty] = useState(false);
+    const [isLoaded, setIsLoaded] = useState(false);
+    const [savePulse, setSavePulse] = useState(false);
 
     useEffect(() => {
-        if (settings && !isDirty) {
-            setForm(formInitial(settings));
+        if (typeof window === "undefined") {
+            return;
         }
-    }, [settings, isDirty]);
-
-    const updateMutation = useUpdateSettings({
-        mutation: {
-            onSuccess: () => {
-                show("Настройки сохранены");
-                qc.invalidateQueries({ queryKey: getGetSettingsQueryKey() });
-            },
-            onError: (err) => {
-                showError(
-                    err instanceof Error
-                        ? err.message
-                        : "Не удалось сохранить настройки",
-                );
-            },
-        },
-    });
+        try {
+            const raw = window.localStorage.getItem(SETTINGS_DRAFT_KEY);
+            if (!raw) {
+                setIsLoaded(true);
+                return;
+            }
+            const parsed = JSON.parse(raw) as Partial<AssistantSettings>;
+            setForm({
+                tone_of_voice:
+                    typeof parsed.tone_of_voice === "string"
+                        ? parsed.tone_of_voice
+                        : "",
+                confidence_threshold:
+                    typeof parsed.confidence_threshold === "number"
+                        ? parsed.confidence_threshold
+                        : 0.5,
+                top_k:
+                    typeof parsed.top_k === "number" ? parsed.top_k : 5,
+                use_articles:
+                    typeof parsed.use_articles === "boolean"
+                        ? parsed.use_articles
+                        : true,
+            });
+        } catch {
+            // Ignore corrupted local draft and fall back to defaults.
+        } finally {
+            setIsLoaded(true);
+        }
+    }, []);
 
     useEffect(() => {
-        if (!isDirty) return;
-        const timer = setTimeout(() => {
-            updateMutation.mutate({ data: form });
-            setIsDirty(false);
-        }, 1000);
-        return () => clearTimeout(timer);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [form, isDirty]);
+        if (!isLoaded || typeof window === "undefined") {
+            return;
+        }
+        window.localStorage.setItem(SETTINGS_DRAFT_KEY, JSON.stringify(form));
+        setSavePulse(true);
+        const timer = window.setTimeout(() => setSavePulse(false), 1200);
+        return () => window.clearTimeout(timer);
+    }, [form, isLoaded]);
+
+    const disabledNotice = useMemo(
+        () =>
+            "В целях безопасности синхронизация с backend отключена. Изменения сохраняются только локально в браузере и не влияют на production pipeline.",
+        [],
+    );
 
     const setUseArticles = (value: boolean) => {
-        const next = { ...form, use_articles: value };
-        setForm(next);
-        updateMutation.mutate({ data: next });
-        setIsDirty(false);
+        setForm((current) => ({ ...current, use_articles: value }));
     };
 
     const saveBadge = (() => {
-        if (updateMutation.isPending) {
+        if (!isLoaded) {
             return (
                 <span className="inline-flex items-center gap-1.5 text-[12px] text-[var(--brand-text-dim)]">
                     <span className="size-1.5 animate-pulse rounded-full bg-[var(--brand-accent)]" />
-                    Сохраняем…
+                    Загружаем черновик…
                 </span>
             );
         }
-        if (isDirty) {
-            return (
-                <span className="inline-flex items-center gap-1.5 text-[12px] text-[var(--brand-text-dim)]">
-                    <span className="size-1.5 rounded-full bg-amber-400" />
-                    Несохранённые изменения
-                </span>
-            );
-        }
-        if (updateMutation.isSuccess) {
-            return (
-                <span className="inline-flex items-center gap-1.5 text-[12px] text-emerald-600">
-                    <CheckIcon className="size-3.5" />
-                    Сохранено
-                </span>
-            );
-        }
-        return null;
-    })();
-
-    if (settingsQuery.isLoading) {
         return (
-            <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 p-6 md:p-10">
-                <div className="flex flex-col gap-2">
-                    <div className="h-8 w-40 animate-shimmer rounded-md" />
-                    <div className="h-5 w-80 animate-shimmer rounded-md" />
-                </div>
-                <div className="h-[600px] max-w-[820px] animate-shimmer rounded-2xl" />
-            </div>
+            <span className="inline-flex items-center gap-1.5 text-[12px] text-emerald-600">
+                <CheckIcon
+                    className={cn("size-3.5", savePulse && "animate-pulse")}
+                />
+                Локальный черновик
+            </span>
         );
-    }
+    })();
 
     return (
         <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 p-6 md:p-10">
@@ -130,6 +111,11 @@ export function SettingsPage() {
                 </p>
             </header>
 
+            <div className="max-w-[820px] rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+                <div className="font-semibold">Настройки отключены от backend</div>
+                <div className="mt-1">{disabledNotice}</div>
+            </div>
+
             <div className="flex max-w-[820px] flex-col gap-8 rounded-2xl border border-[var(--brand-border)] bg-white p-6 md:p-8">
                 {/* Tone of voice */}
                 <Section
@@ -144,10 +130,8 @@ export function SettingsPage() {
                                 ...s,
                                 tone_of_voice: e.target.value,
                             }));
-                            setIsDirty(true);
                         }}
                         placeholder="Пиши дружелюбно, но без панибратства"
-                        disabled={updateMutation.isPending}
                         className="w-full min-h-[120px] resize-none rounded-xl border border-[var(--brand-border)] bg-white px-4 py-3 text-[15px] leading-relaxed text-[var(--brand-ink)] outline-none transition-colors placeholder:text-[var(--brand-text-dim)]/60 focus:border-[var(--brand-accent)]"
                     />
                 </Section>
@@ -167,13 +151,11 @@ export function SettingsPage() {
                             min={0}
                             max={1}
                             formatDisplay={(v) => v.toFixed(2)}
-                            disabled={updateMutation.isPending}
                             onCommit={(v) => {
                                 setForm((s) => ({
                                     ...s,
                                     confidence_threshold: v,
                                 }));
-                                setIsDirty(true);
                             }}
                         />
 
@@ -184,13 +166,11 @@ export function SettingsPage() {
                             min={1}
                             max={50}
                             formatDisplay={(v) => String(Math.round(v))}
-                            disabled={updateMutation.isPending}
                             onCommit={(v) => {
                                 setForm((s) => ({
                                     ...s,
                                     top_k: Math.round(v),
                                 }));
-                                setIsDirty(true);
                             }}
                         />
                     </div>
@@ -209,14 +189,12 @@ export function SettingsPage() {
                             onClick={() => setUseArticles(true)}
                             title="Включено"
                             description="Ассистент ищет ответы и в статьях KB"
-                            disabled={updateMutation.isPending}
                         />
                         <RadioCard
                             selected={!form.use_articles}
                             onClick={() => setUseArticles(false)}
                             title="Выключено"
                             description="Только история обращений"
-                            disabled={updateMutation.isPending}
                         />
                     </div>
                 </Section>

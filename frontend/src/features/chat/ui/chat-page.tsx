@@ -735,12 +735,117 @@ function SourceDialog({
                             </Link>
                         </div>
                     ) : null}
-                    <pre className="whitespace-pre-wrap break-words rounded-2xl border border-border/60 bg-muted/20 p-4 text-sm leading-relaxed text-foreground">
-                        {source.body}
-                    </pre>
+                    <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 text-sm leading-relaxed text-foreground">
+                        {source.source_type === "article" ? (
+                            <MarkdownDocument text={source.body} />
+                        ) : (
+                            <pre className="whitespace-pre-wrap break-words">
+                                {source.body}
+                            </pre>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
+    );
+}
+
+function MarkdownDocument({ text }: { text: string }) {
+    const lines = text.split("\n");
+    return (
+        <div className="space-y-2">
+            {lines.map((line, index) => {
+                const trimmed = line.trim();
+                if (!trimmed) {
+                    return <div key={index} className="h-2" />;
+                }
+                const heading = /^(#{1,6})\s+(.*)$/.exec(trimmed);
+                if (heading) {
+                    const level = heading[1].length;
+                    const className =
+                        level === 1
+                            ? "text-xl font-semibold"
+                            : level === 2
+                              ? "text-lg font-semibold"
+                              : "text-base font-semibold";
+                    return (
+                        <div key={index} className={className}>
+                            <InlineMarkdown text={heading[2]} />
+                        </div>
+                    );
+                }
+                const unordered = /^[-*]\s+(.*)$/.exec(trimmed);
+                if (unordered) {
+                    return (
+                        <div key={index} className="flex gap-2">
+                            <span className="text-muted-foreground">•</span>
+                            <div className="min-w-0">
+                                <InlineMarkdown text={unordered[1]} />
+                            </div>
+                        </div>
+                    );
+                }
+                const ordered = /^(\d+)\.\s+(.*)$/.exec(trimmed);
+                if (ordered) {
+                    return (
+                        <div key={index} className="flex gap-2">
+                            <span className="shrink-0 text-muted-foreground">
+                                {ordered[1]}.
+                            </span>
+                            <div className="min-w-0">
+                                <InlineMarkdown text={ordered[2]} />
+                            </div>
+                        </div>
+                    );
+                }
+                return (
+                    <div key={index} className="whitespace-pre-wrap break-words">
+                        <InlineMarkdown text={line} />
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
+function InlineMarkdown({ text }: { text: string }) {
+    const pattern = /(\[[^\]]+\]\([^)]+\)|`[^`]+`|\*\*[^*]+\*\*)/g;
+    const parts = text.split(pattern);
+    return (
+        <>
+            {parts.map((part, index) => {
+                const link = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(part);
+                if (link) {
+                    return (
+                        <a
+                            key={index}
+                            href={link[2]}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[var(--brand-accent-deep)] underline underline-offset-2"
+                        >
+                            {link[1]}
+                        </a>
+                    );
+                }
+                const code = /^`([^`]+)`$/.exec(part);
+                if (code) {
+                    return (
+                        <code
+                            key={index}
+                            className="rounded bg-background px-1 py-0.5 font-mono text-[0.95em]"
+                        >
+                            {code[1]}
+                        </code>
+                    );
+                }
+                const bold = /^\*\*([^*]+)\*\*$/.exec(part);
+                if (bold) {
+                    return <strong key={index}>{bold[1]}</strong>;
+                }
+                return <span key={index}>{part}</span>;
+            })}
+        </>
     );
 }
 
