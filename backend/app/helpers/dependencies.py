@@ -15,6 +15,7 @@ from backend.app.services.ai_agent_service import AiAgentService
 from backend.app.services.auth import AuthService
 from backend.app.services.dashboard import DashboardService
 from backend.app.services.settings import SettingsService
+from backend.app.services.upload_storage import UploadStorageService
 from backend.app.services.yandex_ocr_service import YandexOcrService
 
 security = HTTPBearer(auto_error=False)
@@ -74,6 +75,12 @@ def get_yandex_ocr_service(
         url=settings.yandex_ocr_url,
         timeout_seconds=settings.yandex_ocr_timeout_seconds,
     )
+
+
+def get_upload_storage_service(
+    settings: Settings = Depends(get_settings),
+) -> UploadStorageService:
+    return UploadStorageService(uploads_dir=settings.uploads_dir)
 
 
 def get_dashboard_service(

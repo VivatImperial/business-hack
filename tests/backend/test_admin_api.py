@@ -207,6 +207,28 @@ class AdminApiTests(BackendDatabaseTestCase):
         self.assertTrue(payload["rating_request_sent"])
         self.assertIn("Оцените", payload["messages"][-1]["text"])
 
+    def test_admin_can_resolve_ticket_source_reference(self) -> None:
+        response = self.client.get(
+            "/api/v1/admin/appeals/sources/ticket:ticket-demo-1",
+            headers=self._auth_headers(),
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["source_type"], "ticket")
+        self.assertEqual(payload["app_url"], "/chat/appeal-1")
+        self.assertIn("Не подключается удаленка", payload["body"])
+
+    def test_admin_can_resolve_article_source_reference(self) -> None:
+        response = self.client.get(
+            "/api/v1/admin/appeals/sources/article:kb-demo-1:0",
+            headers=self._auth_headers(),
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["source_type"], "article")
+        self.assertIsNone(payload["app_url"])
+        self.assertIn("UniVPN", payload["body"])
+
     def test_settings_can_be_read_and_updated(self) -> None:
         get_response = self.client.get(
             "/api/v1/admin/settings",

@@ -52,6 +52,7 @@ class ClientRequestCreateRequest(BaseModel):
     category: str = Field(default="general", min_length=1, max_length=255)
     priority: ClientRequestPriority = "p3"
     channel: ClientChannel = "web"
+    ocr_upload_key: str | None = Field(default=None, max_length=255)
 
     @field_validator("title", "description", "category")
     @classmethod
@@ -65,6 +66,7 @@ class ClientRequestCreateRequest(BaseModel):
 class ClientRequestMessageCreateRequest(BaseModel):
     text: str = Field(min_length=1)
     source_message_id: str | None = Field(default=None, max_length=128)
+    ocr_upload_key: str | None = Field(default=None, max_length=255)
 
     @field_validator("text")
     @classmethod
@@ -95,10 +97,19 @@ class ClientOcrResponse(BaseModel):
     text: str
     mime_type: str
     file_name: str | None = None
+    upload_key: str
+    image_url: str
 
 
 class ClientRequestQuery(BaseModel):
     channel: ClientChannel | None = None
+
+
+class MessageCitationResponse(BaseModel):
+    source_type: str
+    source_id: str
+    title: str | None = None
+    snippet: str | None = None
 
 
 class ClientRequestMessageResponse(BaseModel):
@@ -108,6 +119,9 @@ class ClientRequestMessageResponse(BaseModel):
     role: str
     author_login: str | None
     text: str
+    image_url: str | None = None
+    image_name: str | None = None
+    citations: list[MessageCitationResponse] = Field(default_factory=list)
     created_at: datetime
 
 

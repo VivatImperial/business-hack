@@ -11,5 +11,8 @@ export interface ClientRequestMessageResponse {
   role: string;
   author_login: string | null;
   text: string;
+  image_url?: string | null;
+  image_name?: string | null;
+  citations?: Array<Record<string, unknown>>;
   created_at: string;
 }

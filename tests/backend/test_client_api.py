@@ -13,12 +13,21 @@ from tests.backend.support import BackendDatabaseTestCase
 
 class FakeAiAgentService:
     async def respond(self, payload: dict[str, object]) -> dict[str, object]:
+        user_text = str(payload["user_text"])
+        should_escalate = "оператор" in user_text.lower()
         return {
             "mode": "resolve_issue",
-            "message": f"AI: {payload['user_text']}",
-            "citations": [],
+            "message": f"AI: {user_text}",
+            "citations": [
+                {
+                    "source_type": "ticket",
+                    "source_id": "ticket:1",
+                    "title": "VPN troubleshooting",
+                    "snippet": "Перезапустите VPN-клиент и проверьте 2FA.",
+                }
+            ],
             "confidence": 0.91,
-            "should_escalate": False,
+            "should_escalate": should_escalate,
             "ticket_draft": None,
         }
 
@@ -99,6 +108,7 @@ class ClientApiTests(BackendDatabaseTestCase):
         self.assertEqual(create_response.json()["messages"][0]["text"], "Нужен доступ к VPN")
         self.assertEqual(create_response.json()["messages"][-1]["role"], "assistant")
         self.assertEqual(create_response.json()["messages"][-1]["text"], "AI: Нужен доступ к VPN")
+        self.assertEqual(create_response.json()["messages"][-1]["citations"][0]["source_id"], "ticket:1")
 
         list_response = self.client.get(
             "/api/v1/client/requests",
@@ -136,6 +146,52 @@ class ClientApiTests(BackendDatabaseTestCase):
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(response.json()["mime_type"], "image/png")
         self.assertIn("VPN", response.json()["text"])
+        self.assertTrue(response.json()["upload_key"].startswith("ocr/"))
+        self.assertTrue(response.json()["image_url"].startswith("/uploads/ocr/"))
+
+    def test_ocr_image_is_saved_with_user_message(self) -> None:
+        access_token = self._register_user(login="ocr-msg", email="ocr-msg@example.com")
+        headers = {"Authorization": f"Bearer {access_token}"}
+
+        ocr_response = self.client.post(
+            "/api/v1/client/ocr",
+            headers=headers,
+            files={"image": ("screen.png", b"fake-image", "image/png")},
+        )
+        self.assertEqual(ocr_response.status_code, 200, ocr_response.text)
+
+        create_response = self.client.post(
+            "/api/v1/client/requests",
+            headers=headers,
+            json={
+                "title": "VPN по скриншоту",
+                "description": ocr_response.json()["text"],
+                "channel": "web",
+                "ocr_upload_key": ocr_response.json()["upload_key"],
+            },
+        )
+        self.assertEqual(create_response.status_code, 200, create_response.text)
+        first_message = create_response.json()["messages"][0]
+        self.assertTrue(first_message["image_url"].startswith("/uploads/ocr/"))
+        self.assertEqual(first_message["image_name"], "screen.png")
+
+    def test_escalation_reply_contains_operator_handoff_message(self) -> None:
+        access_token = self._register_user(login="handoff-user", email="handoff@example.com")
+        headers = {"Authorization": f"Bearer {access_token}"}
+
+        create_response = self.client.post(
+            "/api/v1/client/requests",
+            headers=headers,
+            json={
+                "title": "Нужен оператор",
+                "description": "Позовите оператора, пожалуйста",
+                "channel": "web",
+            },
+        )
+        self.assertEqual(create_response.status_code, 200, create_response.text)
+        assistant_text = create_response.json()["messages"][-1]["text"]
+        self.assertIn("Передаю обращение оператору", assistant_text)
+        self.assertEqual(create_response.json()["assistant_resolved"], False)
 
     def test_request_can_be_closed_and_rated_after_resolution(self) -> None:
         access_token = self._register_user(login="close-user", email="close@example.com")

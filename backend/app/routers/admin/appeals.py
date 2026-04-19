@@ -16,6 +16,7 @@ from backend.app.schemas.admin import (
     AppealsListQuery,
     AppealsListResponse,
     AppealStatusResponse,
+    SourceReferenceResponse,
 )
 from backend.app.services.appeals import AppealsService
 
@@ -75,6 +76,20 @@ async def get_appeal_conversation(
     appeals_service: AppealsService = Depends(get_appeals_service),
 ) -> AppealConversationResponse:
     return await appeals_service.get_appeal_conversation(appeal_id)
+
+
+@router.get(
+    "/sources/{source_id:path}",
+    response_model=SourceReferenceResponse,
+    summary="Resolve assistant source",
+    description="Resolve a cited assistant source into the original ticket or knowledge article content.",
+)
+async def get_source_reference(
+    source_id: str,
+    _: Annotated[object, Depends(get_current_admin)],
+    appeals_service: AppealsService = Depends(get_appeals_service),
+) -> SourceReferenceResponse:
+    return await appeals_service.get_source_reference(source_id)
 
 
 @router.post(

@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from backend.app.config import Settings
 from backend.app.db.migrations import apply_migrations
@@ -56,6 +58,8 @@ async def _initialize_database(database: Database, settings: Settings) -> None:
 def create_app(*, initialize_runtime: bool = True) -> FastAPI:
     settings = Settings()
     database = Database(settings.database_url)
+    uploads_dir = Path(settings.uploads_dir).resolve()
+    uploads_dir.mkdir(parents=True, exist_ok=True)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -84,6 +88,7 @@ def create_app(*, initialize_runtime: bool = True) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.mount("/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")
 
     if initialize_runtime:
         try:

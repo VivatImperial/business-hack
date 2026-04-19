@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import json
 import re
 from uuid import uuid4
 
@@ -10,6 +11,7 @@ from fastapi import HTTPException, status
 from backend.app.db.models.entities import Message, Ticket, User
 from backend.app.db.repositories.admin import AdminRepository
 from backend.app.services.ai_agent_service import AiAgentService
+from backend.app.services.upload_storage import UploadStorageService
 from backend.app.schemas.client import (
     ClientRequestCreateRequest,
     ClientRequestMessageCreateRequest,
@@ -39,9 +41,11 @@ class ClientRequestsService:
         repository: AdminRepository,
         *,
         ai_agent_service: AiAgentService,
+        upload_storage: UploadStorageService,
     ) -> None:
         self.repository = repository
         self.ai_agent_service = ai_agent_service
+        self.upload_storage = upload_storage
 
     async def _reload_ticket(self, ticket: Ticket) -> Ticket:
         await self.repository.session.refresh(ticket, attribute_names=["messages"])
@@ -84,6 +88,57 @@ class ClientRequestsService:
             "can_self_close": cls.can_self_close(ticket),
             "awaiting_csat": cls.is_awaiting_csat(ticket),
         }
+
+    @staticmethod
+    def parse_citations(message: Message) -> list[dict[str, object]]:
+        raw = (message.citations_json or "").strip()
+        if not raw:
+            return []
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError:
+            return []
+        if not isinstance(payload, list):
+            return []
+        return [item for item in payload if isinstance(item, dict)]
+
+    @classmethod
+    def serialize_message(cls, message: Message) -> dict[str, object]:
+        return {
+            "id": message.id,
+            "role": message.role,
+            "author_login": message.author_login,
+            "text": message.text,
+            "image_url": message.image_url,
+            "image_name": message.image_name,
+            "citations": cls.parse_citations(message),
+            "created_at": message.created_at,
+        }
+
+    def _resolve_ocr_upload(self, upload_key: str | None) -> tuple[str | None, str | None]:
+        if not upload_key:
+            return None, None
+        resolved = self.upload_storage.resolve_upload(upload_key)
+        if resolved is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="OCR image was not found. Please upload it again.",
+            )
+        return resolved
+
+    def _decorate_operator_handoff(self, assistant_text: str, *, should_escalate: bool) -> str:
+        normalized = assistant_text.strip()
+        if not should_escalate:
+            return normalized
+        handoff = (
+            "Передаю обращение оператору. Он подключится к этой переписке, "
+            "увидит последние сообщения и продолжит разбор."
+        )
+        if not normalized:
+            return handoff
+        if "оператор" in normalized.lower() and "переписк" in normalized.lower():
+            return normalized
+        return f"{normalized}\n\n{handoff}"
 
     async def _build_ai_payload(
         self,
@@ -133,9 +188,14 @@ class ClientRequestsService:
                 )
             )
             assistant_text = str(response.get("message") or "").strip()
+            citations = response.get("citations") or []
             should_escalate = bool(response.get("should_escalate"))
             if not assistant_text:
                 raise ValueError("Assistant response is empty.")
+            assistant_text = self._decorate_operator_handoff(
+                assistant_text,
+                should_escalate=should_escalate,
+            )
             ticket.assistant_resolved = not should_escalate
             ticket.scope = "ticket" if should_escalate else "assistant"
         except (httpx.HTTPError, ValueError, RuntimeError):
@@ -143,6 +203,7 @@ class ClientRequestsService:
                 "Ассистент временно недоступен. Обращение сохранено, пожалуйста попробуйте "
                 "написать еще раз чуть позже или дождитесь подключения оператора."
             )
+            citations = []
             ticket.assistant_resolved = False
             ticket.scope = "ticket"
 
@@ -154,6 +215,7 @@ class ClientRequestsService:
             role="assistant",
             author_login="ai-agent",
             text=assistant_text,
+            citations_json=json.dumps(citations, ensure_ascii=False) if citations else None,
             created_at=now,
             processed_at=now,
         )
@@ -169,6 +231,7 @@ class ClientRequestsService:
         payload: ClientRequestCreateRequest,
     ) -> Ticket:
         now = datetime.now(timezone.utc)
+        image_url, image_name = self._resolve_ocr_upload(payload.ocr_upload_key)
         ticket = Ticket(
             id=f"request-{uuid4().hex}",
             source_system=f"client_{payload.channel}",
@@ -197,6 +260,8 @@ class ClientRequestsService:
             role="user",
             author_login=current_user.login,
             text=payload.description,
+            image_url=image_url,
+            image_name=image_name,
             created_at=now,
             processed_at=now,
         )
@@ -250,6 +315,7 @@ class ClientRequestsService:
             )
 
         now = datetime.now(timezone.utc)
+        image_url, image_name = self._resolve_ocr_upload(payload.ocr_upload_key)
         message = Message(
             id=f"message-{uuid4().hex}",
             ticket_id=ticket.id,
@@ -258,6 +324,8 @@ class ClientRequestsService:
             role="user",
             author_login=current_user.login,
             text=payload.text,
+            image_url=image_url,
+            image_name=image_name,
             created_at=now,
             processed_at=now,
         )

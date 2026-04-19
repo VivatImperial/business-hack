@@ -55,6 +55,7 @@ class Settings(BaseSettings):
     )
     yandex_ocr_timeout_seconds: float = Field(default=30.0, gt=0.0)
     yandex_ocr_max_upload_bytes: int = Field(default=8 * 1024 * 1024, ge=1024)
+    uploads_dir: str = Field(default="backend_uploads", validation_alias="BACKEND_UPLOADS_DIR")
 
     mssql_host: str = Field(default="mssql", validation_alias="MSSQL_HOST")
     mssql_port: int = Field(default=1433, validation_alias="MSSQL_PORT")

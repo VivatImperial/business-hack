@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, time, timezone
 
-from sqlalchemy import Select, select
+from sqlalchemy import Select, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.db.models.entities import (
@@ -172,6 +172,30 @@ class AdminRepository:
 
     async def get_ticket(self, ticket_id: str) -> Ticket | None:
         result = await self.session.execute(select(Ticket).where(Ticket.id == ticket_id))
+        return result.scalar_one_or_none()
+
+    async def get_ticket_by_reference(self, reference: str) -> Ticket | None:
+        result = await self.session.execute(
+            select(Ticket).where(
+                or_(
+                    Ticket.id == reference,
+                    Ticket.id == f"mssql-ticket-{reference}",
+                    Ticket.source_ticket_id == reference,
+                )
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def get_document_by_reference(self, reference: str) -> Document | None:
+        result = await self.session.execute(
+            select(Document).where(
+                or_(
+                    Document.id == reference,
+                    Document.id == f"mssql-document-{reference}",
+                    Document.source_document_id == reference,
+                )
+            )
+        )
         return result.scalar_one_or_none()
 
     async def list_user_tickets(

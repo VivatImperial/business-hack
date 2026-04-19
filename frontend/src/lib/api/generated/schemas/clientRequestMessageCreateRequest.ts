@@ -10,4 +10,5 @@ export interface ClientRequestMessageCreateRequest {
   /** @minLength 1 */
   text: string;
   source_message_id?: string | null;
+  ocr_upload_key?: string | null;
 }

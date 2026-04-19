@@ -1,8 +1,14 @@
 import type { ClientRequestMessageResponse } from "@/lib/api/generated/schemas";
+import { BASE_URL } from "@/lib/api/client";
 import { motion } from "@/shared/animations/motion";
 
+type UserMessage = ClientRequestMessageResponse & {
+    image_url?: string | null;
+    image_name?: string | null;
+};
+
 interface MessageUserProps {
-    message: ClientRequestMessageResponse;
+    message: UserMessage;
     /** Index in the list, used to stagger the reveal. */
     index?: number;
 }
@@ -21,9 +27,30 @@ export function MessageUser({ message, index = 0 }: MessageUserProps) {
             }}
             className="flex justify-end"
         >
-            <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl bg-primary px-4 py-3 text-[15px] leading-relaxed text-primary-foreground">
-                {message.text}
+            <div className="flex max-w-[85%] flex-col gap-2 rounded-2xl bg-primary px-4 py-3 text-[15px] leading-relaxed text-primary-foreground">
+                {message.image_url ? (
+                    <a
+                        href={resolveMediaUrl(message.image_url)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block overflow-hidden rounded-xl border border-white/20"
+                    >
+                        <img
+                            src={resolveMediaUrl(message.image_url)}
+                            alt={message.image_name || "OCR screenshot"}
+                            className="max-h-72 w-full object-cover"
+                        />
+                    </a>
+                ) : null}
+                <div className="whitespace-pre-wrap">{message.text}</div>
             </div>
         </motion.div>
     );
+}
+
+function resolveMediaUrl(url: string): string {
+    if (/^https?:\/\//i.test(url)) {
+        return url;
+    }
+    return `${BASE_URL.replace(/\/api$/, "")}${url.startsWith("/") ? url : `/${url}`}`;
 }

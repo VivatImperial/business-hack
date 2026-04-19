@@ -6,12 +6,30 @@ import {
     useRef,
     useState,
 } from "react";
-import { PaperAirplaneIcon, PhotoIcon } from "@heroicons/react/24/solid";
+import {
+    PaperAirplaneIcon,
+    PhotoIcon,
+    XMarkIcon,
+} from "@heroicons/react/24/solid";
 import { cn } from "@/lib/utils";
 
+export type RecognizedOcrAsset = {
+    text: string;
+    upload_key: string;
+    image_url: string;
+    file_name?: string | null;
+};
+
+export type ChatInputSubmitPayload = {
+    text: string;
+    ocrUploadKey?: string;
+    imageUrl?: string;
+    imageName?: string | null;
+};
+
 interface ChatInputProps {
-    onSend: (text: string) => void | Promise<void>;
-    onRecognizeImage?: (file: File) => Promise<string>;
+    onSend: (payload: ChatInputSubmitPayload) => void | Promise<void>;
+    onRecognizeImage?: (file: File) => Promise<RecognizedOcrAsset>;
     disabled?: boolean;
     autoFocus?: boolean;
 }
@@ -26,6 +44,7 @@ export function ChatInput({
     const [ocrPending, setOcrPending] = useState(false);
     const [ocrNotice, setOcrNotice] = useState<string | null>(null);
     const [ocrError, setOcrError] = useState<string | null>(null);
+    const [ocrAsset, setOcrAsset] = useState<RecognizedOcrAsset | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -49,8 +68,14 @@ export function ChatInput({
         e?.preventDefault();
         const text = value.trim();
         if (!text || disabled || ocrPending) return;
-        void onSend(text);
+        void onSend({
+            text,
+            ocrUploadKey: ocrAsset?.upload_key,
+            imageUrl: ocrAsset?.image_url,
+            imageName: ocrAsset?.file_name,
+        });
         setValue("");
+        setOcrAsset(null);
         setOcrNotice(null);
         setOcrError(null);
     };
@@ -68,13 +93,15 @@ export function ChatInput({
         setOcrNotice(`Распознаю ${file.name}...`);
         setOcrError(null);
         try {
-            const recognized = (await onRecognizeImage(file)).trim();
+            const recognized = await onRecognizeImage(file);
+            const text = recognized.text.trim();
             setValue((prev) =>
                 prev.trim()
-                    ? `${prev.trimEnd()}\n\n${recognized}`
-                    : recognized,
+                    ? `${prev.trimEnd()}\n\n${text}`
+                    : text,
             );
-            setOcrNotice(`Текст из ${file.name} добавлен в поле.`);
+            setOcrAsset(recognized);
+            setOcrNotice(`Текст из ${file.name} добавлен, скрин сохранится в истории.`);
         } catch (error) {
             setOcrNotice(null);
             setOcrError(
@@ -82,6 +109,7 @@ export function ChatInput({
                     ? error.message
                     : "Не удалось распознать изображение",
             );
+            setOcrAsset(null);
         } finally {
             setOcrPending(false);
             if (fileInputRef.current) {
@@ -164,6 +192,24 @@ export function ChatInput({
                     <PaperAirplaneIcon className="size-4" />
                 </button>
             </div>
+            {ocrAsset && !ocrError ? (
+                <div className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-muted/30 px-3 py-2 text-xs text-foreground">
+                    <span className="truncate">
+                        Скрин {ocrAsset.file_name || "ocr-image"} будет отправлен вместе с сообщением
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setOcrAsset(null);
+                            setOcrNotice(null);
+                        }}
+                        className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        aria-label="Убрать OCR-скрин"
+                    >
+                        <XMarkIcon className="size-4" />
+                    </button>
+                </div>
+            ) : null}
             {(ocrNotice || ocrError) && (
                 <div
                     className={cn(

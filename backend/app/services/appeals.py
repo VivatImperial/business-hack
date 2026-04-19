@@ -12,6 +12,7 @@ from backend.app.schemas.admin import (
     AppealConversationMessageItem,
     AppealMessageCreateRequest,
     AppealConversationResponse,
+    SourceReferenceResponse,
     AppealsListQuery,
 )
 
@@ -42,6 +43,56 @@ class AppealsService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Appeal not found.")
         return ticket
 
+    async def get_source_reference(self, source_id: str) -> SourceReferenceResponse:
+        normalized = source_id.strip()
+        if not normalized or ":" not in normalized:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid source id.")
+
+        source_type, reference = normalized.split(":", 1)
+        if source_type == "ticket":
+            ticket = await self.repository.get_ticket_by_reference(reference)
+            if ticket is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source ticket not found.")
+            title = ticket.title or ticket.category or ticket.id
+            body_parts = [
+                f"Описание:\n{ticket.description}" if ticket.description else None,
+                *[
+                    (
+                        f"{message.role.upper()} "
+                        f"{f'({message.author_login})' if message.author_login else ''}\n"
+                        f"{message.text}"
+                    ).strip()
+                    for message in ticket.messages
+                ],
+            ]
+            return SourceReferenceResponse(
+                source_id=normalized,
+                source_type="ticket",
+                title=title,
+                subtitle=f"Заявка {ticket.id}",
+                body="\n\n".join(part for part in body_parts if part).strip() or title,
+                app_url=f"/chat/{ticket.id}",
+            )
+
+        if source_type == "article":
+            document_reference, _, chunk_index = reference.partition(":")
+            document = await self.repository.get_document_by_reference(document_reference)
+            if document is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source article not found.")
+            subtitle = document.source
+            if chunk_index:
+                subtitle = f"{subtitle} · chunk {chunk_index}"
+            return SourceReferenceResponse(
+                source_id=normalized,
+                source_type="article",
+                title=document.title,
+                subtitle=subtitle,
+                body=document.content,
+                app_url=None,
+            )
+
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported source type.")
+
     async def get_appeal_conversation(self, appeal_id: str) -> AppealConversationResponse:
         ticket = await self.get_appeal(appeal_id)
         ordered = sorted(
@@ -65,12 +116,8 @@ class AppealsService:
             can_self_close=ClientRequestsService.can_self_close(ticket),
             awaiting_csat=ClientRequestsService.is_awaiting_csat(ticket),
             messages=[
-                AppealConversationMessageItem(
-                    id=m.id,
-                    role=m.role,
-                    author_login=m.author_login,
-                    text=m.text,
-                    created_at=m.created_at,
+                AppealConversationMessageItem.model_validate(
+                    ClientRequestsService.serialize_message(m)
                 )
                 for m in ordered
             ],

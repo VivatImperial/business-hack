@@ -14,7 +14,7 @@ import {
 } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
-import { CheckBadgeIcon, PlusIcon } from "@heroicons/react/24/solid";
+import { CheckBadgeIcon, PlusIcon, XMarkIcon } from "@heroicons/react/24/solid";
 import { cn } from "@/lib/utils";
 
 import {
@@ -33,10 +33,36 @@ import { customFetch } from "@/lib/api/client";
 import { useSnackbar } from "@/hooks/use-snackbar";
 
 const appRoute = getRouteApi("/_app");
-import { ChatInput } from "@/features/chat/ui/chat-input";
+import {
+    ChatInput,
+    type ChatInputSubmitPayload,
+    type RecognizedOcrAsset,
+} from "@/features/chat/ui/chat-input";
 import { MessageUser } from "@/features/chat/ui/message-user";
 import { MessageAssistant } from "@/features/chat/ui/message-assistant";
 import { ChatEmpty } from "@/features/chat/ui/chat-empty";
+
+type MessageCitation = {
+    source_type: string;
+    source_id: string;
+    title?: string | null;
+    snippet?: string | null;
+};
+
+type SourceReferenceResponse = {
+    source_id: string;
+    source_type: "ticket" | "article";
+    title: string;
+    body: string;
+    subtitle?: string | null;
+    app_url?: string | null;
+};
+
+type ChatMessage = ClientRequestMessageResponse & {
+    image_url?: string | null;
+    image_name?: string | null;
+    citations?: MessageCitation[];
+};
 
 type ChatRequestDetail = ClientRequestDetailResponse & {
     csat: number | null;
@@ -44,12 +70,11 @@ type ChatRequestDetail = ClientRequestDetailResponse & {
     rating_request_sent: boolean;
     can_self_close: boolean;
     awaiting_csat: boolean;
+    messages: ChatMessage[];
 };
 
-type ClientOcrResponse = {
-    text: string;
+type ClientOcrResponse = RecognizedOcrAsset & {
     mime_type: string;
-    file_name?: string | null;
 };
 
 type ClientRequestCloseResponse = {
@@ -64,7 +89,13 @@ type ClientRequestRatingResponse = {
     csat: number;
 };
 
-async function recognizeImage(file: File): Promise<string> {
+type PendingMessageDraft = {
+    text: string;
+    image_url?: string;
+    image_name?: string | null;
+};
+
+async function recognizeImage(file: File): Promise<ClientOcrResponse> {
     const formData = new FormData();
     formData.append("image", file);
     const response = await customFetch<{
@@ -74,7 +105,7 @@ async function recognizeImage(file: File): Promise<string> {
         method: "POST",
         body: formData,
     });
-    return response.data.text;
+    return response.data;
 }
 
 export function ChatPage() {
@@ -95,7 +126,7 @@ function ChatFirstMessage() {
     const navigate = useNavigate();
     const { showError } = useSnackbar();
     const queryClient = useQueryClient();
-    const [optimisticText, setOptimisticText] = useState<string | null>(null);
+    const [optimisticDraft, setOptimisticDraft] = useState<PendingMessageDraft | null>(null);
     const ocrMutation = useMutation({
         mutationFn: recognizeImage,
     });
@@ -122,7 +153,7 @@ function ChatFirstMessage() {
                 }
             },
             onError: (err) => {
-                setOptimisticText(null);
+                setOptimisticDraft(null);
                 const message =
                     err instanceof Error
                         ? err.message
@@ -132,10 +163,14 @@ function ChatFirstMessage() {
         },
     });
 
-    const handleSend = (text: string) => {
-        const trimmed = text.trim();
+    const handleSend = (payload: ChatInputSubmitPayload) => {
+        const trimmed = payload.text.trim();
         if (!trimmed) return;
-        setOptimisticText(trimmed);
+        setOptimisticDraft({
+            text: trimmed,
+            image_url: payload.imageUrl,
+            image_name: payload.imageName,
+        });
         const title =
             trimmed.length > 60 ? `${trimmed.slice(0, 60)}…` : trimmed;
         createRequest.mutate({
@@ -143,11 +178,12 @@ function ChatFirstMessage() {
                 title: title || "Новое обращение",
                 description: trimmed,
                 channel: "web",
+                ocr_upload_key: payload.ocrUploadKey,
             },
         });
     };
 
-    const pending = createRequest.isPending || optimisticText !== null;
+    const pending = createRequest.isPending || optimisticDraft !== null;
 
     return (
         <ChatLayout
@@ -160,21 +196,26 @@ function ChatFirstMessage() {
                 />
             }
         >
-            {optimisticText ? (
+            {optimisticDraft ? (
                 <div className="flex flex-col gap-4">
                     <MessageUser
                         message={{
                             id: "optimistic",
                             role: "user",
-                            text: optimisticText,
+                            text: optimisticDraft.text,
                             author_login: null,
+                            image_url: optimisticDraft.image_url,
+                            image_name: optimisticDraft.image_name,
                             created_at: new Date().toISOString(),
                         }}
                     />
                     <MessageAssistant pending />
                 </div>
             ) : (
-                <ChatEmpty onSuggest={handleSend} disabled={pending} />
+                <ChatEmpty
+                    onSuggest={(text) => handleSend({ text })}
+                    disabled={pending}
+                />
             )}
         </ChatLayout>
     );
@@ -190,10 +231,11 @@ function ChatConversation({ requestId }: { requestId: string }) {
     const navigate = useNavigate();
     const { show, showError } = useSnackbar();
     const queryClient = useQueryClient();
-    const [optimisticText, setOptimisticText] = useState<string | null>(null);
+    const [optimisticDraft, setOptimisticDraft] = useState<PendingMessageDraft | null>(null);
     const [resolutionExpanded, setResolutionExpanded] = useState(false);
     const [resolutionDismissed, setResolutionDismissed] = useState(false);
     const [selectedScore, setSelectedScore] = useState<number | null>(null);
+    const [sourceDialog, setSourceDialog] = useState<SourceReferenceResponse | null>(null);
     const { role } = appRoute.useRouteContext();
     const viewerIsAdmin = role === "admin";
 
@@ -255,10 +297,10 @@ function ChatConversation({ requestId }: { requestId: string }) {
                         queryKey: getAdminAppealConversationQueryKey(requestId),
                     });
                 }
-                setOptimisticText(null);
+                setOptimisticDraft(null);
             },
             onError: (err) => {
-                setOptimisticText(null);
+                setOptimisticDraft(null);
                 const message =
                     err instanceof Error
                         ? err.message
@@ -286,10 +328,10 @@ function ChatConversation({ requestId }: { requestId: string }) {
                     queryKey: getListAppealsApiV1AdminAppealsGetQueryKey(),
                 });
             }
-            setOptimisticText(null);
+            setOptimisticDraft(null);
         },
         onError: (err) => {
-            setOptimisticText(null);
+            setOptimisticDraft(null);
             const message =
                 err instanceof Error
                     ? err.message
@@ -339,12 +381,31 @@ function ChatConversation({ requestId }: { requestId: string }) {
             });
         },
     });
+    const sourceMutation = useMutation({
+        mutationFn: async (sourceId: string) => {
+            const response = await customFetch<{
+                status: number;
+                data: SourceReferenceResponse;
+            }>(`/api/v1/admin/appeals/sources/${encodeURIComponent(sourceId)}`, {
+                method: "GET",
+            });
+            return response.data;
+        },
+        onSuccess: (source) => setSourceDialog(source),
+        onError: (error) => {
+            showError(
+                error instanceof Error
+                    ? error.message
+                    : "Не удалось открыть источник",
+            );
+        },
+    });
 
     const detail =
         detailQuery.data?.status === 200
             ? (detailQuery.data.data as ChatRequestDetail)
             : undefined;
-    const messages = useMemo<ClientRequestMessageResponse[]>(
+    const messages = useMemo<ChatMessage[]>(
         () => detail?.messages ?? [],
         [detail?.messages],
     );
@@ -357,7 +418,7 @@ function ChatConversation({ requestId }: { requestId: string }) {
         const el = scrollerRef.current;
         if (!el || !atBottom) return;
         el.scrollTop = el.scrollHeight;
-    }, [messages.length, optimisticText, atBottom]);
+    }, [messages.length, optimisticDraft, atBottom]);
 
     const onScroll = (e: React.UIEvent<HTMLDivElement>) => {
         const el = e.currentTarget;
@@ -380,15 +441,22 @@ function ChatConversation({ requestId }: { requestId: string }) {
         }
     }, [detail?.awaiting_csat, detail?.can_self_close, requestId]);
 
-    const handleSend = (text: string) => {
-        const trimmed = text.trim();
+    const handleSend = (payload: ChatInputSubmitPayload) => {
+        const trimmed = payload.text.trim();
         if (!trimmed) return;
-        setOptimisticText(trimmed);
+        setOptimisticDraft({
+            text: trimmed,
+            image_url: payload.imageUrl,
+            image_name: payload.imageName,
+        });
         if (viewerIsAdmin) {
             addAdminMessage.mutate(trimmed);
             return;
         }
-        addMessage.mutate({ requestId, data: { text: trimmed } });
+        addMessage.mutate({
+            requestId,
+            data: { text: trimmed, ocr_upload_key: payload.ocrUploadKey },
+        });
     };
 
     const handleResolutionSubmit = async () => {
@@ -416,8 +484,15 @@ function ChatConversation({ requestId }: { requestId: string }) {
         }
     };
 
+    const handleOpenSource = (citation: MessageCitation) => {
+        if (!viewerIsAdmin) {
+            return;
+        }
+        sourceMutation.mutate(citation.source_id);
+    };
+
     const pending =
-        addMessage.isPending || addAdminMessage.isPending || optimisticText !== null;
+        addMessage.isPending || addAdminMessage.isPending || optimisticDraft !== null;
     const resolutionPending = closeRequest.isPending || submitRating.isPending;
 
     if (detailQuery.isLoading) {
@@ -471,6 +546,14 @@ function ChatConversation({ requestId }: { requestId: string }) {
                             key={m.id}
                             message={m}
                             index={idx}
+                            onOpenSource={
+                                viewerIsAdmin ? handleOpenSource : undefined
+                            }
+                            sourceLoadingId={
+                                sourceMutation.isPending
+                                    ? sourceMutation.variables
+                                    : null
+                            }
                         />
                     ),
                 )
@@ -494,14 +577,16 @@ function ChatConversation({ requestId }: { requestId: string }) {
                     />
                 )}
 
-                {optimisticText && (
+                {optimisticDraft && (
                     <>
                         <MessageUser
                             message={{
                                 id: "optimistic",
                                 role: "user",
-                                text: optimisticText,
+                                text: optimisticDraft.text,
                                 author_login: null,
+                                image_url: optimisticDraft.image_url,
+                                image_name: optimisticDraft.image_name,
                                 created_at: new Date().toISOString(),
                             }}
                             index={renderableMessages.length}
@@ -513,6 +598,12 @@ function ChatConversation({ requestId }: { requestId: string }) {
                     </>
                 )}
             </div>
+            {viewerIsAdmin && sourceDialog ? (
+                <SourceDialog
+                    source={sourceDialog}
+                    onClose={() => setSourceDialog(null)}
+                />
+            ) : null}
         </ChatLayout>
     );
 }
@@ -600,6 +691,55 @@ function ClosedBanner() {
                 <PlusIcon className="size-3.5" />
                 Начать новый чат
             </Link>
+        </div>
+    );
+}
+
+function SourceDialog({
+    source,
+    onClose,
+}: {
+    source: SourceReferenceResponse;
+    onClose: () => void;
+}) {
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+            <div className="flex max-h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-background shadow-2xl">
+                <div className="flex items-start justify-between gap-4 border-b border-border/60 px-5 py-4">
+                    <div className="min-w-0">
+                        <div className="truncate text-lg font-semibold text-foreground">
+                            {source.title}
+                        </div>
+                        <div className="mt-1 text-sm text-muted-foreground">
+                            {source.subtitle || source.source_id}
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="inline-flex size-9 items-center justify-center rounded-xl border border-border/70 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+                        aria-label="Закрыть источник"
+                    >
+                        <XMarkIcon className="size-4" />
+                    </button>
+                </div>
+                <div className="overflow-y-auto px-5 py-4">
+                    {source.app_url ? (
+                        <div className="mb-4">
+                            <Link
+                                to={source.app_url}
+                                onClick={onClose}
+                                className="inline-flex rounded-full border border-[var(--brand-border)] bg-[var(--brand-cream)] px-3 py-1.5 text-sm font-medium text-[var(--brand-ink)] transition-colors hover:bg-[var(--brand-cream)]/80"
+                            >
+                                Открыть связанную заявку
+                            </Link>
+                        </div>
+                    ) : null}
+                    <pre className="whitespace-pre-wrap break-words rounded-2xl border border-border/60 bg-muted/20 p-4 text-sm leading-relaxed text-foreground">
+                        {source.body}
+                    </pre>
+                </div>
+            </div>
         </div>
     );
 }

@@ -61,6 +61,7 @@ services:
       BACKEND_CORS_ORIGINS: "${BACKEND_CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173}"
       BACKEND_RUN_MIGRATIONS_ON_STARTUP: "false"
       BACKEND_ENABLE_DEV_SEED: "${BACKEND_ENABLE_DEV_SEED:-false}"
+      BACKEND_UPLOADS_DIR: "/app/uploads"
       YANDEX_GPT_API_KEY: "${YANDEX_GPT_API_KEY:-}"
       YANDEX_GPT_FOLDER_ID: "${YANDEX_GPT_FOLDER_ID:-}"
       YANDEX_OCR_API_KEY: "${YANDEX_OCR_API_KEY:-}"
@@ -73,6 +74,8 @@ services:
       MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in .env}"
     ports:
       - "8000:8000"
+    volumes:
+      - backend-uploads:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -136,5 +139,6 @@ services:
 
 volumes:
   postgres-data:
+  backend-uploads:
   mssql-data:
   qdrant-data:

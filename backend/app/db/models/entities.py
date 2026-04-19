@@ -91,6 +91,9 @@ class Message(Base):
     role: Mapped[str] = mapped_column(String(32), nullable=False)
     author_login: Mapped[str | None] = mapped_column(String(128))
     text: Mapped[str] = mapped_column(Text, nullable=False)
+    image_url: Mapped[str | None] = mapped_column(Text)
+    image_name: Mapped[str | None] = mapped_column(String(255))
+    citations_json: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=utcnow,

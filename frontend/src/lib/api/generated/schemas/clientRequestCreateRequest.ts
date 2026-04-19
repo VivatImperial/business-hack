@@ -23,4 +23,5 @@ export interface ClientRequestCreateRequest {
   category?: string;
   priority?: ClientRequestCreateRequestPriority;
   channel?: ClientRequestCreateRequestChannel;
+  ocr_upload_key?: string | null;
 }

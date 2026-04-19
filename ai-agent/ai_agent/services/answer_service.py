@@ -99,11 +99,12 @@ class AnswerService:
                     or hit.payload.get("request_text")
                     or hit.point_id,
                     snippet=(
-                        hit.payload.get("resolution_text")
+                        hit.payload.get("grounding_markdown")
+                        or hit.payload.get("resolution_text")
                         or hit.payload.get("chunk_markdown")
                         or hit.payload.get("request_text")
                         or ""
-                    )[:240]
+                    )[:2000]
                     or None,
                 )
             )

@@ -5,6 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
+from backend.app.schemas.client import MessageCitationResponse
+
 PeriodValue = Literal["1h", "6h", "24h", "7d", "30d", "90d"]
 AppealScope = Literal["ticket", "assistant", "all"]
 AppealStatusFilter = Literal["in_progress", "closed"]
@@ -88,6 +90,9 @@ class AppealConversationMessageItem(BaseModel):
     role: str
     author_login: str | None
     text: str
+    image_url: str | None = None
+    image_name: str | None = None
+    citations: list[MessageCitationResponse] = Field(default_factory=list)
     created_at: datetime
 
 
@@ -139,6 +144,15 @@ class AppealCloseResponse(BaseModel):
 class AppealRatingResponse(BaseModel):
     id: str
     rating_request_sent: bool
+
+
+class SourceReferenceResponse(BaseModel):
+    source_id: str
+    source_type: Literal["ticket", "article"]
+    title: str
+    body: str
+    subtitle: str | None = None
+    app_url: str | None = None
 
 
 class AssistantSettingsResponse(BaseModel):

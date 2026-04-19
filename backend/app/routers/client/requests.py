@@ -9,6 +9,7 @@ from backend.app.helpers.dependencies import (
     get_ai_agent_service,
     get_current_user,
     get_settings,
+    get_upload_storage_service,
     get_yandex_ocr_service,
 )
 from backend.app.schemas.client import (
@@ -26,6 +27,7 @@ from backend.app.schemas.client import (
 from backend.app.config import Settings
 from backend.app.services.ai_agent_service import AiAgentService
 from backend.app.services.client_requests import ClientRequestsService
+from backend.app.services.upload_storage import UploadStorageService
 from backend.app.services.yandex_ocr_service import YandexOcrService
 
 router = APIRouter(tags=["Client Requests"])
@@ -34,8 +36,13 @@ router = APIRouter(tags=["Client Requests"])
 def get_client_requests_service(
     repository=Depends(get_admin_repository),
     ai_agent_service: AiAgentService = Depends(get_ai_agent_service),
+    upload_storage: UploadStorageService = Depends(get_upload_storage_service),
 ) -> ClientRequestsService:
-    return ClientRequestsService(repository, ai_agent_service=ai_agent_service)
+    return ClientRequestsService(
+        repository,
+        ai_agent_service=ai_agent_service,
+        upload_storage=upload_storage,
+    )
 
 
 def serialize_request(ticket: Ticket) -> ClientRequestDetailResponse:
@@ -52,16 +59,7 @@ def serialize_request(ticket: Ticket) -> ClientRequestDetailResponse:
         updated_at=ticket.updated_at,
         closed_at=ticket.closed_at,
         **state,
-        messages=[
-            {
-                "id": message.id,
-                "role": message.role,
-                "author_login": message.author_login,
-                "text": message.text,
-                "created_at": message.created_at,
-            }
-            for message in ticket.messages
-        ],
+        messages=[ClientRequestsService.serialize_message(message) for message in ticket.messages],
     )
 
 
@@ -122,6 +120,7 @@ async def recognize_text(
     _: User = Depends(get_current_user),
     settings: Settings = Depends(get_settings),
     ocr_service: YandexOcrService = Depends(get_yandex_ocr_service),
+    upload_storage: UploadStorageService = Depends(get_upload_storage_service),
 ) -> ClientOcrResponse:
     if not ocr_service.is_configured:
         raise HTTPException(
@@ -172,7 +171,18 @@ async def recognize_text(
             detail="OCR did not recognize any text.",
         )
 
-    return ClientOcrResponse(text=text, mime_type=content_type, file_name=image.filename)
+    upload_key, image_url, image_name = upload_storage.save_ocr_image(
+        file_bytes=payload,
+        mime_type=content_type,
+        file_name=image.filename,
+    )
+    return ClientOcrResponse(
+        text=text,
+        mime_type=content_type,
+        file_name=image_name,
+        upload_key=upload_key,
+        image_url=image_url,
+    )
 
 
 @router.post(
