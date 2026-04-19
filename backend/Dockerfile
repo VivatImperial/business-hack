@@ -14,6 +14,7 @@ RUN python -m pip install --upgrade pip && \
         greenlet \
         httpx \
         pydantic-settings \
+        python-multipart \
         pymssql \
         PyJWT \
         sqlalchemy \
