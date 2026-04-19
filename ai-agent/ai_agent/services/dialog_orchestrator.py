@@ -47,7 +47,8 @@ class DialogOrchestrator:
         self.ticket_draft_service = ticket_draft_service
 
     async def respond(self, request: AgentRespondRequest) -> AgentRespondResponse:
-        mode = self.mode_router.route(request.user_text)
+        effective_user_text = self._build_effective_user_text(request)
+        mode = self.mode_router.route(effective_user_text)
         query_hints_getter = getattr(self.retrieval_service, "extract_query_hints", None)
         retrieve_tickets = getattr(self.retrieval_service, "retrieve_ticket_candidates", None)
         retrieve_articles = getattr(self.retrieval_service, "retrieve_article_candidates", None)
@@ -55,16 +56,16 @@ class DialogOrchestrator:
         build_ticket_query = getattr(self.retrieval_service, "build_ticket_query", None)
 
         if callable(query_hints_getter) and callable(retrieve_tickets):
-            query_hints = query_hints_getter(request.user_text)
+            query_hints = query_hints_getter(effective_user_text)
             tickets = await asyncio.to_thread(
                 retrieve_tickets,
-                request.user_text,
+                effective_user_text,
                 settings=request.settings,
             )
             reranked_tickets = await asyncio.to_thread(
                 self.rerank_service.rerank_tickets,
                 tickets,
-                user_text=request.user_text,
+                user_text=effective_user_text,
                 query_hints=query_hints,
             )
             retrieval = RetrievalResult(
@@ -76,10 +77,14 @@ class DialogOrchestrator:
                 should_enrich = bool(should_enrich_getter(reranked_tickets)) if callable(should_enrich_getter) else False
                 if should_enrich:
                     top_ticket = reranked_tickets[0] if reranked_tickets else None
-                    normalized_query = build_ticket_query(request.user_text) if callable(build_ticket_query) else request.user_text
+                    normalized_query = (
+                        build_ticket_query(effective_user_text)
+                        if callable(build_ticket_query)
+                        else effective_user_text
+                    )
                     retrieval.articles = await asyncio.to_thread(
                         retrieve_articles,
-                        user_text=request.user_text,
+                        user_text=effective_user_text,
                         normalized_query=normalized_query,
                         query_hints=query_hints,
                         top_ticket=top_ticket,
@@ -89,7 +94,7 @@ class DialogOrchestrator:
         else:
             retrieval = await asyncio.to_thread(
                 self.retrieval_service.retrieve,
-                request.user_text,
+                effective_user_text,
                 settings=request.settings,
             )
         decision = self.confidence_service.decide(
@@ -103,7 +108,7 @@ class DialogOrchestrator:
 
         if mode == "create_ticket":
             suggested_ticket = self.ticket_draft_service.build_draft(
-                user_text=request.user_text,
+                user_text=effective_user_text,
                 top_tickets=[ticket.model_dump() for ticket in retrieval.tickets],
             )
             if decision != "escalate" and suggested_ticket.clarifying_questions:
@@ -128,6 +133,7 @@ class DialogOrchestrator:
                 user_text=request.user_text,
                 retrieval=retrieval,
                 tone_of_voice=request.settings.tone_of_voice,
+                history=request.history,
             )
             if ABSTAIN_RESPONSE_RE.search(assistant_message) and CLARIFY_RESPONSE_RE.search(assistant_message):
                 decision = "clarify"
@@ -175,3 +181,32 @@ class DialogOrchestrator:
                 continue
             kept_lines.append(line)
         return "\n".join(kept_lines).strip(), question_lines
+
+    def _build_effective_user_text(self, request: AgentRespondRequest) -> str:
+        current_text = request.user_text.strip()
+        if not current_text or not request.history:
+            return current_text
+
+        history = [message for message in request.history if message.content.strip()]
+        if history and history[-1].role == "user" and history[-1].content.strip() == current_text:
+            history = history[:-1]
+        if not history:
+            return current_text
+
+        last_assistant = next(
+            (message.content.strip() for message in reversed(history) if message.role == "assistant"),
+            "",
+        )
+        if not last_assistant or ("?" not in last_assistant and not CLARIFY_RESPONSE_RE.search(last_assistant)):
+            return current_text
+
+        last_user = next(
+            (message.content.strip() for message in reversed(history) if message.role == "user"),
+            "",
+        )
+        parts: list[str] = []
+        if last_user:
+            parts.append(f"Previous request: {last_user}")
+        parts.append(f"Assistant clarification: {last_assistant}")
+        parts.append(f"User follow-up: {current_text}")
+        return "\n".join(parts)

@@ -74,6 +74,7 @@ class Ticket(Base):
         back_populates="ticket",
         cascade="all, delete-orphan",
         lazy="selectin",
+        order_by=lambda: (Message.created_at.asc(), Message.id.asc()),
     )
 
 

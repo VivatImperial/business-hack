@@ -45,7 +45,14 @@ class FakeAnswerService:
     async def build_create_ticket_message(self, *, draft, tone_of_voice: str) -> str:
         return self.create_ticket_answer
 
-    async def build_resolve_issue_answer(self, *, user_text: str, retrieval: RetrievalResult, tone_of_voice: str) -> str:
+    async def build_resolve_issue_answer(
+        self,
+        *,
+        user_text: str,
+        retrieval: RetrievalResult,
+        tone_of_voice: str,
+        history=None,
+    ) -> str:
         return self.resolve_answer
 
     def build_clarify_message(self, *, draft: TicketDraftSuggestion | None = None) -> str:

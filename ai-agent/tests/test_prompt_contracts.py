@@ -52,6 +52,27 @@ class PromptContractTests(unittest.TestCase):
         self.assertIn("Удаленный доступ / VPN", context)
         self.assertIn("VPN", context)
 
+    def test_answer_service_appends_human_readable_sources(self) -> None:
+        retrieval = RetrievalResult(
+            tickets=[
+                RetrievedDocument(
+                    point_id="ticket:1",
+                    score=0.9,
+                    payload={
+                        "service": "Удаленный доступ / VPN",
+                        "resolution_text": "Перезапустите VPN-клиент.",
+                    },
+                )
+            ],
+            articles=[],
+            used_articles=False,
+        )
+
+        answer = AnswerService()._append_sources("Сначала перезапустите VPN-клиент. [1]", retrieval)
+
+        self.assertIn("**Источники:**", answer)
+        self.assertIn("[1] Удаленный доступ / VPN", answer)
+
 
 if __name__ == "__main__":
     unittest.main()
