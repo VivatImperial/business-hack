@@ -35,6 +35,18 @@ class ClientRequestsService:
         r")\b",
         re.IGNORECASE,
     )
+    SYSTEM_INFO_HINT_RE = re.compile(
+        r"("
+        r"windows|linux|macos|android|ios|iphone|"
+        r"intel|amd|ryzen|core\s*i[3579]|"
+        r"ram|memory|gb|гб|озу|памят|"
+        r"cpu|процессор|система|операцион|"
+        r"ноутбук|laptop|desktop|workstation|pc|"
+        r"64[- ]?bit|64[- ]?разряд|"
+        r"lenovo|thinkpad|hp|dell|asus|acer|msi|redmi|xiaomi|samsung|huawei"
+        r")",
+        re.IGNORECASE,
+    )
 
     def __init__(
         self,
@@ -140,6 +152,66 @@ class ClientRequestsService:
             return normalized
         return f"{normalized}\n\n{handoff}"
 
+    @classmethod
+    def _extract_system_info_summary(cls, text: str) -> str | None:
+        normalized = re.sub(r"\s+", " ", text).strip()
+        if not normalized:
+            return None
+
+        parts: list[str] = []
+        for raw_line in re.split(r"[\r\n]+", text):
+            line = re.sub(r"\s+", " ", raw_line).strip(" -:;,.")
+            if len(line) < 3:
+                continue
+            if cls.SYSTEM_INFO_HINT_RE.search(line):
+                parts.append(line)
+
+        if not parts:
+            fallback_chunks = re.split(r"[|,;/]+", normalized)
+            for raw_chunk in fallback_chunks:
+                chunk = raw_chunk.strip(" -:;,.")
+                if len(chunk) < 3:
+                    continue
+                if cls.SYSTEM_INFO_HINT_RE.search(chunk):
+                    parts.append(chunk)
+
+        unique_parts: list[str] = []
+        seen: set[str] = set()
+        for item in parts:
+            key = item.casefold()
+            if key in seen:
+                continue
+            seen.add(key)
+            unique_parts.append(item)
+            if len(unique_parts) >= 6:
+                break
+
+        if not unique_parts:
+            return None
+        return "; ".join(unique_parts)
+
+    @classmethod
+    def _format_message_for_ai(cls, message: Message) -> str:
+        base_text = (message.text or "").strip()
+        parts: list[str] = []
+
+        if message.image_name or message.image_url:
+            asset_bits = []
+            if message.image_name:
+                asset_bits.append(f"name={message.image_name}")
+            if message.image_url:
+                asset_bits.append(f"url={message.image_url}")
+            parts.append(f"[Attached image: {', '.join(asset_bits)}]")
+
+        system_info_summary = cls._extract_system_info_summary(base_text)
+        if system_info_summary:
+            parts.append(f"[Detected device/system details: {system_info_summary}]")
+
+        if base_text:
+            parts.append(base_text)
+
+        return "\n".join(parts).strip()
+
     async def _build_ai_payload(
         self,
         *,
@@ -155,11 +227,11 @@ class ClientRequestsService:
             "appeal_id": ticket.id,
             "message_id": user_message.id,
             "employee_login": ticket.employee_login,
-            "user_text": user_message.text,
+            "user_text": self._format_message_for_ai(user_message),
             "history": [
                 {
                     "role": message.role if message.role in {"user", "assistant", "system"} else "system",
-                    "text": message.text,
+                    "text": self._format_message_for_ai(message),
                 }
                 for message in history
             ],

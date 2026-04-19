@@ -12,7 +12,11 @@ from tests.backend.support import BackendDatabaseTestCase
 
 
 class FakeAiAgentService:
+    def __init__(self) -> None:
+        self.last_payload: dict[str, object] | None = None
+
     async def respond(self, payload: dict[str, object]) -> dict[str, object]:
+        self.last_payload = payload
         user_text = str(payload["user_text"])
         should_escalate = "оператор" in user_text.lower()
         return {
@@ -46,7 +50,8 @@ class ClientApiTests(BackendDatabaseTestCase):
         super().setUp()
         os.environ["BACKEND_TELEGRAM_BOT_TOKEN"] = "telegram-test-token"
         self.app = create_app()
-        self.app.dependency_overrides[get_ai_agent_service] = lambda: FakeAiAgentService()
+        self.fake_ai_agent = FakeAiAgentService()
+        self.app.dependency_overrides[get_ai_agent_service] = lambda: self.fake_ai_agent
         self.app.dependency_overrides[get_yandex_ocr_service] = lambda: FakeYandexOcrService()
         self.client = TestClient(self.app)
 
@@ -174,6 +179,10 @@ class ClientApiTests(BackendDatabaseTestCase):
         first_message = create_response.json()["messages"][0]
         self.assertTrue(first_message["image_url"].startswith("/api/uploads/ocr/"))
         self.assertEqual(first_message["image_name"], "screen.png")
+
+        assert self.fake_ai_agent.last_payload is not None
+        self.assertIn("[Attached image: name=screen.png", str(self.fake_ai_agent.last_payload["user_text"]))
+        self.assertIn("VPN код подтверждения", str(self.fake_ai_agent.last_payload["user_text"]))
 
     def test_escalation_reply_contains_operator_handoff_message(self) -> None:
         access_token = self._register_user(login="handoff-user", email="handoff@example.com")

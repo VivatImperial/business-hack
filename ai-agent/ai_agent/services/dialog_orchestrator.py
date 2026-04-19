@@ -24,6 +24,20 @@ CLARIFY_RESPONSE_RE = re.compile(
     re.IGNORECASE,
 )
 QUESTION_LINE_RE = re.compile(r"^\s*(?:[-*]|\d+[.)])\s+.*\?\s*$")
+DEVICE_CLARIFY_RE = re.compile(
+    r"(на каком устройстве|какая система|какую систему|какая ос|какая операцион|windows|linux|macos|android|ios)",
+    re.IGNORECASE,
+)
+SYSTEM_INFO_RESPONSE_RE = re.compile(
+    r"("
+    r"\[attached image:|\[detected device/system details:|"
+    r"windows|linux|macos|android|ios|iphone|"
+    r"intel|amd|ryzen|core\s*i[3579]|"
+    r"ram|memory|gb|гб|озу|памят|"
+    r"cpu|процессор|desktop|laptop|ноутбук|64[- ]?bit|64[- ]?разряд"
+    r")",
+    re.IGNORECASE,
+)
 
 
 class DialogOrchestrator:
@@ -102,6 +116,13 @@ class DialogOrchestrator:
             retrieval=retrieval,
             threshold=request.settings.confidence_threshold,
         )
+        if (
+            mode == "resolve_issue"
+            and decision == "clarify"
+            and retrieval.tickets
+            and self._answers_last_device_clarification(request)
+        ):
+            decision = "answer"
         confidence = self.confidence_service.confidence(retrieval)
         citations = self.answer_service.build_citations(retrieval)
         suggested_ticket = None
@@ -130,7 +151,7 @@ class DialogOrchestrator:
                 resolved_by = "human"
         elif decision == "answer":
             assistant_message = await self.answer_service.build_resolve_issue_answer(
-                user_text=request.user_text,
+                user_text=effective_user_text,
                 retrieval=retrieval,
                 tone_of_voice=request.settings.tone_of_voice,
                 history=request.history,
@@ -210,3 +231,23 @@ class DialogOrchestrator:
         parts.append(f"Assistant clarification: {last_assistant}")
         parts.append(f"User follow-up: {current_text}")
         return "\n".join(parts)
+
+    def _answers_last_device_clarification(self, request: AgentRespondRequest) -> bool:
+        current_text = request.user_text.strip()
+        if not current_text:
+            return False
+
+        history = [message for message in request.history if message.content.strip()]
+        if history and history[-1].role == "user" and history[-1].content.strip() == current_text:
+            history = history[:-1]
+        if not history:
+            return False
+
+        last_assistant = next(
+            (message.content.strip() for message in reversed(history) if message.role == "assistant"),
+            "",
+        )
+        if not last_assistant or not DEVICE_CLARIFY_RE.search(last_assistant):
+            return False
+
+        return bool(SYSTEM_INFO_RESPONSE_RE.search(current_text))
