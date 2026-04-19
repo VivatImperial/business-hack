@@ -82,6 +82,9 @@ class FakeAnswerService:
     def build_escalation_message(self) -> str:
         return "escalate"
 
+    def build_operator_handoff_message(self) -> str:
+        return "operator-handoff"
+
     def build_citations(self, retrieval: RetrievalResult):
         return []
 
@@ -296,6 +299,47 @@ class DialogOrchestratorTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.decision, "answer")
         self.assertEqual(response.assistant_message, "Используйте сборку VPN-клиента для Windows 11.")
         self.assertFalse(response.should_escalate)
+
+    async def test_explicit_operator_request_escalates_even_with_retrieval_hits(self) -> None:
+        orchestrator = DialogOrchestrator(
+            mode_router=FakeModeRouter(mode="resolve_issue"),
+            retrieval_service=FakeRetrievalWithTicketService(),
+            rerank_service=FakeRerankService(),
+            confidence_service=FakeConfidenceService(decision="answer"),
+            answer_service=FakeAnswerService(resolve_answer="resolve"),
+            ticket_draft_service=FakeTicketDraftService(),
+        )
+
+        response = await orchestrator.respond(
+            AgentRespondRequest(
+                appeal_id="appeal-6",
+                message_id="message-6",
+                employee_login="ivanov",
+                user_text="Вызови спеца, пожалуйста",
+                history=[
+                    {
+                        "role": "user",
+                        "text": "Не подключается VPN",
+                    },
+                    {
+                        "role": "assistant",
+                        "text": "Попробуйте перезапустить VPN-клиент.",
+                    },
+                ],
+                settings=AgentSettingsPayload(
+                    tone_of_voice="helpful",
+                    confidence_threshold=0.7,
+                    top_k=5,
+                    use_articles=True,
+                ),
+            )
+        )
+
+        self.assertEqual(response.mode, "resolve_issue")
+        self.assertEqual(response.decision, "escalate")
+        self.assertEqual(response.assistant_message, "operator-handoff")
+        self.assertTrue(response.should_escalate)
+        self.assertEqual(response.resolved_by, "human")
 
 
 if __name__ == "__main__":

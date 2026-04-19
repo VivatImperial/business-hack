@@ -83,6 +83,17 @@ class ClientApiTests(BackendDatabaseTestCase):
         self.assertEqual(response.status_code, 201, response.text)
         return response.json()["access_token"]
 
+    def _admin_headers(self) -> dict[str, str]:
+        response = self.client.post(
+            "/api/v1/admin/auth/login",
+            json={
+                "email": "admin@example.com",
+                "password": "admin12345",
+            },
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        return {"Authorization": f"Bearer {response.json()['access_token']}"}
+
     def test_register_me_and_request_flow(self) -> None:
         access_token = self._register_user(login="client", email="client@example.com")
         headers = {"Authorization": f"Bearer {access_token}"}
@@ -201,6 +212,39 @@ class ClientApiTests(BackendDatabaseTestCase):
         assistant_text = create_response.json()["messages"][-1]["text"]
         self.assertIn("Передаю обращение оператору", assistant_text)
         self.assertEqual(create_response.json()["assistant_resolved"], False)
+
+    def test_explicit_specialist_request_moves_ticket_to_operator_queue(self) -> None:
+        access_token = self._register_user(login="specialist-user", email="specialist@example.com")
+        headers = {"Authorization": f"Bearer {access_token}"}
+
+        create_response = self.client.post(
+            "/api/v1/client/requests",
+            headers=headers,
+            json={
+                "title": "Нужен специалист",
+                "description": "Вызови оператора, пожалуйста",
+                "channel": "web",
+            },
+        )
+        self.assertEqual(create_response.status_code, 200, create_response.text)
+        self.assertEqual(create_response.json()["assistant_resolved"], False)
+
+        request_id = create_response.json()["id"]
+        admin_response = self.client.get(
+            f"/api/v1/admin/appeals/{request_id}/conversation",
+            headers=self._admin_headers(),
+        )
+        self.assertEqual(admin_response.status_code, 200, admin_response.text)
+        self.assertEqual(admin_response.json()["assistant_resolved"], False)
+        self.assertEqual(admin_response.json()["id"], request_id)
+
+        list_response = self.client.get(
+            "/api/v1/admin/appeals",
+            headers=self._admin_headers(),
+            params={"scope": "ticket"},
+        )
+        self.assertEqual(list_response.status_code, 200, list_response.text)
+        self.assertIn(request_id, [item["id"] for item in list_response.json()["items"]])
 
     def test_request_can_be_closed_and_rated_after_resolution(self) -> None:
         access_token = self._register_user(login="close-user", email="close@example.com")

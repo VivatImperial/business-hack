@@ -87,6 +87,12 @@ class AnswerService:
             "Лучше оформить заявку или передать обращение специалисту."
         )
 
+    def build_operator_handoff_message(self) -> str:
+        return (
+            "Передаю обращение оператору. Он подключится к этой переписке, "
+            "увидит последние сообщения и продолжит разбор."
+        )
+
     def build_citations(self, retrieval: RetrievalResult) -> list[Citation]:
         citations: list[Citation] = []
         for hit in self._context_hits(retrieval):

@@ -24,6 +24,19 @@ CLARIFY_RESPONSE_RE = re.compile(
     re.IGNORECASE,
 )
 QUESTION_LINE_RE = re.compile(r"^\s*(?:[-*]|\d+[.)])\s+.*\?\s*$")
+OPERATOR_HANDOFF_RE = re.compile(
+    r"("
+    r"позов(и|ите).*(оператор|специалист|человек|спец)|"
+    r"вызов(и|ите).*(оператор|специалист|человек|спец)|"
+    r"перевед(и|ите).*(оператор|специалист|человек|спец)|"
+    r"подключ(и|ите).*(оператор|специалист|человек|спец)|"
+    r"нуж(е|н|на|но).*(оператор|специалист|человек|спец)|"
+    r"хоч(у|ется).*(оператор|специалист|человек|спец)|"
+    r"соедин(и|ите).*(оператор|специалист|человек|спец)|"
+    r"call.*(operator|specialist|human)"
+    r")",
+    re.IGNORECASE,
+)
 DEVICE_CLARIFY_RE = re.compile(
     r"(на каком устройстве|какая система|какую систему|какая ос|какая операцион|windows|linux|macos|android|ios)",
     re.IGNORECASE,
@@ -63,6 +76,7 @@ class DialogOrchestrator:
     async def respond(self, request: AgentRespondRequest) -> AgentRespondResponse:
         effective_user_text = self._build_effective_user_text(request)
         mode = self.mode_router.route(effective_user_text)
+        explicit_operator_handoff = self._is_operator_handoff_request(request.user_text)
         query_hints_getter = getattr(self.retrieval_service, "extract_query_hints", None)
         retrieve_tickets = getattr(self.retrieval_service, "retrieve_ticket_candidates", None)
         retrieve_articles = getattr(self.retrieval_service, "retrieve_article_candidates", None)
@@ -111,18 +125,21 @@ class DialogOrchestrator:
                 effective_user_text,
                 settings=request.settings,
             )
-        decision = self.confidence_service.decide(
-            mode=mode,
-            retrieval=retrieval,
-            threshold=request.settings.confidence_threshold,
-        )
-        if (
-            mode == "resolve_issue"
-            and decision == "clarify"
-            and retrieval.tickets
-            and self._answers_last_device_clarification(request)
-        ):
-            decision = "answer"
+        if explicit_operator_handoff:
+            decision = "escalate"
+        else:
+            decision = self.confidence_service.decide(
+                mode=mode,
+                retrieval=retrieval,
+                threshold=request.settings.confidence_threshold,
+            )
+            if (
+                mode == "resolve_issue"
+                and decision == "clarify"
+                and retrieval.tickets
+                and self._answers_last_device_clarification(request)
+            ):
+                decision = "answer"
         confidence = self.confidence_service.confidence(retrieval)
         citations = self.answer_service.build_citations(retrieval)
         suggested_ticket = None
@@ -170,7 +187,11 @@ class DialogOrchestrator:
             assistant_message = self.answer_service.build_clarify_message()
             resolved_by = "assistant"
         else:
-            assistant_message = self.answer_service.build_escalation_message()
+            assistant_message = (
+                self.answer_service.build_operator_handoff_message()
+                if explicit_operator_handoff
+                else self.answer_service.build_escalation_message()
+            )
             resolved_by = "human"
 
         return AgentRespondResponse(
@@ -251,3 +272,6 @@ class DialogOrchestrator:
             return False
 
         return bool(SYSTEM_INFO_RESPONSE_RE.search(current_text))
+
+    def _is_operator_handoff_request(self, user_text: str) -> bool:
+        return bool(OPERATOR_HANDOFF_RE.search((user_text or "").strip()))
