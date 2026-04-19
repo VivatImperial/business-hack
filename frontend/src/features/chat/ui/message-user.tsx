@@ -52,5 +52,9 @@ function resolveMediaUrl(url: string): string {
     if (/^https?:\/\//i.test(url)) {
         return url;
     }
-    return `${BASE_URL.replace(/\/api$/, "")}${url.startsWith("/") ? url : `/${url}`}`;
+    const normalizedUrl = url.startsWith("/") ? url : `/${url}`;
+    const routedUrl = normalizedUrl.startsWith("/uploads/")
+        ? `/api${normalizedUrl}`
+        : normalizedUrl;
+    return `${BASE_URL.replace(/\/api$/, "")}${routedUrl}`;
 }

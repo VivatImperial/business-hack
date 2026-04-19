@@ -147,7 +147,7 @@ class ClientApiTests(BackendDatabaseTestCase):
         self.assertEqual(response.json()["mime_type"], "image/png")
         self.assertIn("VPN", response.json()["text"])
         self.assertTrue(response.json()["upload_key"].startswith("ocr/"))
-        self.assertTrue(response.json()["image_url"].startswith("/uploads/ocr/"))
+        self.assertTrue(response.json()["image_url"].startswith("/api/uploads/ocr/"))
 
     def test_ocr_image_is_saved_with_user_message(self) -> None:
         access_token = self._register_user(login="ocr-msg", email="ocr-msg@example.com")
@@ -172,7 +172,7 @@ class ClientApiTests(BackendDatabaseTestCase):
         )
         self.assertEqual(create_response.status_code, 200, create_response.text)
         first_message = create_response.json()["messages"][0]
-        self.assertTrue(first_message["image_url"].startswith("/uploads/ocr/"))
+        self.assertTrue(first_message["image_url"].startswith("/api/uploads/ocr/"))
         self.assertEqual(first_message["image_name"], "screen.png")
 
     def test_escalation_reply_contains_operator_handoff_message(self) -> None:

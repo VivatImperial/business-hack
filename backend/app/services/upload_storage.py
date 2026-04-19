@@ -31,7 +31,7 @@ class UploadStorageService:
         path = self.root / key
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(file_bytes)
-        return key, f"/uploads/{key}", safe_name
+        return key, self.public_url(key), safe_name
 
     def resolve_upload(self, upload_key: str | None) -> tuple[str, str] | None:
         if not upload_key:
@@ -43,7 +43,11 @@ class UploadStorageService:
             return None
         if not path.is_file():
             return None
-        return f"/uploads/{upload_key}", self._display_name(upload_key)
+        return self.public_url(upload_key), self._display_name(upload_key)
+
+    def public_url(self, upload_key: str) -> str:
+        normalized = upload_key.lstrip("/")
+        return f"/api/uploads/{normalized}"
 
     def _safe_name(self, file_name: str | None, *, mime_type: str) -> str:
         extension = EXTENSION_BY_MIME.get(mime_type, ".bin")

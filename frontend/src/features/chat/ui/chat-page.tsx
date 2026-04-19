@@ -392,21 +392,20 @@ function ChatConversation({ requestId }: { requestId: string }) {
             return response.data;
         },
         onSuccess: (source) => setSourceDialog(source),
-        onError: (error, citation) => {
+        onError: (_error, citation) => {
             if (citation?.snippet) {
                 setSourceDialog({
                     source_id: citation.source_id,
                     source_type:
                         citation.source_type === "article" ? "article" : "ticket",
                     title: citation.title || citation.source_id,
-                    subtitle: "Фрагмент из retrieval-контекста",
+                    subtitle: "Сохраненный фрагмент из retrieval-контекста",
                     body: citation.snippet,
                     app_url: null,
                 });
-                showError("Оригинал источника недоступен, открыт сохраненный фрагмент");
                 return;
             }
-            showError(error instanceof Error ? error.message : "Не удалось открыть источник");
+            showError("Не удалось открыть источник");
         },
     });
 
@@ -745,7 +744,7 @@ function SourceDialog({
                         </div>
                     ) : null}
                     <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 text-sm leading-relaxed text-foreground">
-                        {source.source_type === "article" ? (
+                        {shouldRenderAsMarkdown(source.body) ? (
                             <MarkdownDocument text={source.body} />
                         ) : (
                             <pre className="whitespace-pre-wrap break-words">
@@ -814,6 +813,16 @@ function MarkdownDocument({ text }: { text: string }) {
                 );
             })}
         </div>
+    );
+}
+
+function shouldRenderAsMarkdown(text: string): boolean {
+    const trimmed = text.trim();
+    if (!trimmed) {
+        return false;
+    }
+    return /(^|\n)(#{1,6}\s+|[-*]\s+|\d+\.\s+|\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/.test(
+        trimmed,
     );
 }
 

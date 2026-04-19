@@ -89,6 +89,7 @@ def create_app(*, initialize_runtime: bool = True) -> FastAPI:
         allow_headers=["*"],
     )
     app.mount("/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")
+    app.mount("/api/uploads", StaticFiles(directory=str(uploads_dir)), name="api-uploads")
 
     if initialize_runtime:
         try:
