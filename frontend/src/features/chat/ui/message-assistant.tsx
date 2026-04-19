@@ -22,6 +22,7 @@ interface MessageAssistantProps {
     index?: number;
     onOpenSource?: (citation: MessageCitation) => void;
     sourceLoadingId?: string | null;
+    hideCitationMarkers?: boolean;
 }
 
 export function MessageAssistant({
@@ -30,11 +31,15 @@ export function MessageAssistant({
     index = 0,
     onOpenSource,
     sourceLoadingId,
+    hideCitationMarkers = false,
 }: MessageAssistantProps) {
     const isPending = pending === true || !message;
     const delay = Math.min(index * 0.05, 0.35);
     const citations = message?.citations ?? [];
-    const bodyText = useMemo(() => stripSourcesBlock(message?.text ?? ""), [message?.text]);
+    const bodyText = useMemo(
+        () => stripSourcesBlock(message?.text ?? "", { hideCitationMarkers }),
+        [hideCitationMarkers, message?.text],
+    );
 
     return (
         <motion.div
@@ -70,13 +75,24 @@ export function MessageAssistant({
     );
 }
 
-function stripSourcesBlock(text: string): string {
-    const marker = "\n**Источники:**";
-    const index = text.indexOf(marker);
-    if (index === -1) {
-        return text;
+function stripSourcesBlock(
+    text: string,
+    options?: { hideCitationMarkers?: boolean },
+): string {
+    let normalized = text;
+    const markerPatterns = [/\n\*\*Источники:\*\*[\s\S]*$/u, /\nИсточники:\s*[\s\S]*$/u];
+    for (const pattern of markerPatterns) {
+        normalized = normalized.replace(pattern, "");
     }
-    return text.slice(0, index).trimEnd();
+
+    if (options?.hideCitationMarkers) {
+        normalized = normalized
+            .replace(/\s*\[(\d+(?:\s*,\s*\d+)*)\]/gu, "")
+            .replace(/[ \t]+\n/gu, "\n")
+            .replace(/\n{3,}/gu, "\n\n");
+    }
+
+    return normalized.trimEnd();
 }
 
 function SourceList({

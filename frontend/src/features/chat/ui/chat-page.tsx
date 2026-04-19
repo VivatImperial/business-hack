@@ -554,6 +554,7 @@ function ChatConversation({ requestId }: { requestId: string }) {
                             key={m.id}
                             message={m}
                             index={idx}
+                            hideCitationMarkers={!viewerIsAdmin}
                             onOpenSource={
                                 viewerIsAdmin ? handleOpenSource : undefined
                             }
